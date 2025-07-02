@@ -108,13 +108,21 @@ KEYBIND.Menu.ProfileIcons = {
 
 for name, mat in pairs(KEYBIND.Menu.ProfileIcons) do
     if not mat or mat:IsError() then
-        print("[KEYBIND] Failed to load icon for profile: " .. name)
+        print("[BindMenu] Failed to load icon for profile: " .. name)
         KEYBIND.Menu.ProfileIcons[name] = nil
     end
 end
 
 --[[ Default profile icon ]]--
 KEYBIND.Menu.DefaultIcon = Material("icon16/user.png", "smooth")
+
+local function SafeDrawGradient(material, x, y, w, h, color)
+    if not material or material:IsError() then return end
+    
+    surface.SetDrawColor(color or Color(255, 255, 255, 10))
+    surface.SetMaterial(material)
+    surface.DrawTexturedRect(x, y, w, h)
+end
 
 function KEYBIND.Menu:CreateProfileSelector(parent)
     surface.CreateFont("KeybindProfileFont", {
@@ -206,9 +214,7 @@ function KEYBIND.Menu:CreateProfileSelector(parent)
                 
                 local icon = KEYBIND.Menu.ProfileIcons[self.profileData.icon] or KEYBIND.Menu.DefaultIcon
                 if icon then
-                    surface.SetDrawColor(255, 255, 255, isSelected and 255 or 200)
-                    surface.SetMaterial(icon)
-                    surface.DrawTexturedRect(iconX, iconY, iconSize, iconSize)
+                SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
                 end
                 
                 local textX = iconX + iconSize + 8
@@ -276,19 +282,15 @@ function KEYBIND.Menu:Create()
     end
 
     self.Frame = vgui.Create("DFrame")
-    self.Frame:SetSize(1485, 550)
+    local screenW, screenH = ScrW(), ScrH()
+    local frameW = math.min(1485, screenW * 0.9)
+    local frameH = math.min(550, screenH * 0.8)
+    self.Frame:SetSize(frameW, frameH)
     self.Frame:Center()
     self.Frame:SetTitle("")
     self.Frame:MakePopup()
     self.Frame:ShowCloseButton(false)
     self.Frame:SetDraggable(false)
-
-        -- Make the frame size responsive
-    local screenW, screenH = ScrW(), ScrH()
-    local frameW = math.min(1485, screenW * 0.9)
-    local frameH = math.min(550, screenH * 0.8)
-    
-    self.Frame:SetSize(frameW, frameH)
 
     self.Frame.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, KEYBIND.Colors.background)
@@ -323,7 +325,7 @@ function KEYBIND.Menu:Create()
         draw.SimpleText("✕", "DermaLarge", w/2, h/2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     closeBtn.DoClick = function()
-        hook.Remove("Think", "KEYBIND_KeyHandler")
+        self:CleanUp()
         self.Frame:Remove()
     end
 
@@ -586,6 +588,13 @@ end
     return profiles
 end
 
+function KEYBIND.Menu:CleanUp()
+    if timer.Exists("KEYBIND_KeyHandler") then
+        timer.Remove("KEYBIND_KeyHandler")
+    end
+    hook.Remove("Think", "KEYBIND_KeyHandler")
+end
+
 function KEYBIND.Menu:OpenRenameDialog(profile)
     local dialog = vgui.Create("DFrame")
     dialog:SetSize(300, 120)
@@ -800,9 +809,7 @@ function KEYBIND.Menu:CreateSettingsButton()
     settingsBtn.Paint = function(self, w, h)
         draw.RoundedBox(4, 0, 0, w, h, self:IsHovered() and KEYBIND.Colors.keyHover or KEYBIND.Colors.keyDefault)
         
-        surface.SetDrawColor(255, 255, 255, 255)
-        surface.SetMaterial(gear)
-        surface.DrawTexturedRect(w/2-8, h/2-8, 16, 16)
+    SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
     end
     
     settingsBtn.DoClick = function()
@@ -840,9 +847,7 @@ dialog.Paint = function(self, w, h)
     
     render.SetScissorRect(0, 0, w, h, true)
     local gradient = Material("gui/gradient_up")
-    surface.SetDrawColor(255, 255, 255, 10)
-    surface.SetMaterial(gradient)
-    surface.DrawTexturedRect(0, 0, w, h)
+    SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
     render.SetScissorRect(0, 0, w, h, false)
     
     draw.RoundedBoxEx(8, 0, 0, w, 30, KEYBIND.Colors.sectionHeader, true, true, false, false)
@@ -914,9 +919,7 @@ end
         local baseColor = self:IsHovered() and KEYBIND.Colors.accent or KEYBIND.Colors.keyDefault
         draw.RoundedBox(6, 0, 0, w, h, baseColor)
         
-        surface.SetDrawColor(255, 255, 255, 20)
-        surface.SetMaterial(Material("gui/gradient_up"))
-        surface.DrawTexturedRect(0, 0, w, h)
+        SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
         
         draw.SimpleText("Set Bind", "BindDialogFont", w/2, h/2,
             KEYBIND.Colors.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -939,22 +942,45 @@ end
             KEYBIND.Colors.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     
-    btnSet.DoClick = function()
-        local command = textEntry:GetValue()
-        if self:ValidateCommand(command, key) then
-            KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = command
-            KEYBIND.Storage:SaveBinds()
-            
-            if KEYBIND.Settings.Config.showFeedback then
-                chat.AddText(Color(0, 255, 0), "[BindMenu] Bind set for key " .. key)
-            end
-            
-            dialog:Remove()
-            self:RefreshKeyboardLayout()
-        else
-            chat.AddText(Color(255, 0, 0), "[BindMenu] Use a valid command")
+btnSet.DoClick = function()
+    local command = textEntry:GetValue()
+    if self:ValidateCommand(command, key) then
+        print("[KEYBIND] Setting bind: " .. key .. " -> " .. command)
+        
+        -- Make sure the profile exists
+        if not KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile] then
+            print("[KEYBIND] Error: Current profile doesn't exist")
+            return
         end
+        
+        -- Make sure the binds table exists
+        if not KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds then
+            print("[KEYBIND] Creating binds table for profile")
+            KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds = {}
+        end
+        
+        -- Set the bind
+        KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = command
+        
+        -- Save the binds
+        KEYBIND.Storage:SaveBinds()
+        
+        -- Print the current binds for debugging
+        print("[KEYBIND] Current binds for profile " .. KEYBIND.Storage.CurrentProfile .. ":")
+        for k, v in pairs(KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds) do
+            print("  " .. k .. " -> " .. v)
+        end
+        
+        if KEYBIND.Settings.Config.showFeedback then
+            chat.AddText(Color(0, 255, 0), "[BindMenu] Bind set for key " .. key)
+        end
+        
+        dialog:Remove()
+        self:RefreshKeyboardLayout()
+    else
+        chat.AddText(Color(255, 0, 0), "[BindMenu] Use a valid command")
     end
+end
 
     btnRemove.DoClick = function()
         KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = nil
@@ -1011,7 +1037,7 @@ function KEYBIND.Menu:AddFadeAnimation(panel)
     panel:AlphaTo(255, 0.2, 0)
 end
 
-concommand.Add("editbinds", function()
+concommand.Add("bindmenu", function()
     KEYBIND.Menu:Create()
 end)
 
