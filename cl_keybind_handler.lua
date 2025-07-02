@@ -304,4 +304,6 @@ hook.Add("InitPostEntity", "KEYBIND_VerifyKeyCodeMap", function()
     timer.Simple(2, function()
         KEYBIND.Handler:VerifyKeyCodeMap()
     end)
-end)
+end
+
+--[[end of file]]--
