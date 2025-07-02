@@ -22,7 +22,7 @@ KEYBIND.Menu = KEYBIND.Menu or {}
 KEYBIND.Menu.CompleteKeyboardLayout = {
 mainSection = {
     startX = 35,
-    startY = 80,
+    startY = 40,
     keySize = 43,
     spacing = 11,
     rows = {
@@ -52,36 +52,36 @@ mainSection = {
     
     navSection = {
         startX = 0, 
-        startY = 80,
+        startY = 40,
         keySize = 43,
-        spacing = 5,
+        spacing = 9,
         rows = {
-            {{"PRTSC", {width = 1, height = 1, prefix = "", isVertical = false}}, 
-             {"SCRLK", {width = 1, height = 1, prefix = "", isVertical = false}}, 
-             {"PAUSE", {width = 1, height = 1, prefix = "", isVertical = false}}},
-            {{"INS", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"HOME", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"PGUP", {width = 1, height = 1, prefix = "KP_", isVertical = false}}},
-            {{"DEL", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"END", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"PGDN", {width = 1, height = 1, prefix = "KP_", isVertical = false}}},
+            {{"PRTSC", {width = 1.2, height = 1, prefix = "", isVertical = false}}, 
+             {"SCRLK", {width = 1.2, height = 1, prefix = "", isVertical = false}}, 
+             {"PAUSE", {width = 1.2, height = 1, prefix = "", isVertical = false}}},
+            {{"INS", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"HOME", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"PGUP", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}},
+            {{"DEL", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"END", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"PGDN", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}},
             {{"", {width = 1, height = 1, prefix = "", isVertical = false}}},
             {{"", {width = 1, height = 1, prefix = "", isVertical = false}}, 
-             {"↑", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"", {width = 1, height = 1, prefix = "", isVertical = false}}},
-            {{"←", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"↓", {width = 1, height = 1, prefix = "KP_", isVertical = false}}, 
-             {"→", {width = 1, height = 1, prefix = "KP_", isVertical = false}}}
+             {"↑", {width = 1.2, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"", {width = 1.3, height = 1, prefix = "", isVertical = false}}},
+            {{"←", {width = 1.3, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"↓", {width = 1.3, height = 1, prefix = "KP_", isVertical = false}}, 
+             {"→", {width = 1.3, height = 1, prefix = "KP_", isVertical = false}}}
         }
     },
     
     numpadSection = {
         startX = 0, 
-        startY = 80,
+        startY = 40,
         keySize = 43,
         spacing = 11,
         rows = {
-            {{"NUMLK", {width = 1, height = 1, prefix = "KP_"}}, {"/", {width = 1, height = 1, prefix = "KP_"}}, {"*", {width = 1, height = 1, prefix = "KP_"}}, {"-", {width = 1, height = 1, prefix = "KP_"}}},
+            {{"NMLK", {width = 1, height = 1, prefix = "KP_"}}, {"/", {width = 1, height = 1, prefix = "KP_"}}, {"*", {width = 1, height = 1, prefix = "KP_"}}, {"-", {width = 1, height = 1, prefix = "KP_"}}},
             {{"7", {width = 1, height = 1, prefix = "KP_"}}, {"8", {width = 1, height = 1, prefix = "KP_"}}, {"9", {width = 1, height = 1, prefix = "KP_"}}, {"+", {width = 1, height = 2, prefix = "KP_"}}}, 
             {{"4", {width = 1, height = 1, prefix = "KP_"}}, {"5", {width = 1, height = 1, prefix = "KP_"}}, {"6", {width = 1, height = 1, prefix = "KP_"}}},
             {{"1", {width = 1, height = 1, prefix = "KP_"}}, {"2", {width = 1, height = 1, prefix = "KP_"}}, {"3", {width = 1, height = 1, prefix = "KP_"}}, {"ENTER", {width = 1, height = 2, isVertical = true, prefix = "KP_"}}}, 
@@ -125,59 +125,75 @@ local function SafeDrawGradient(material, x, y, w, h, color)
 end
 
 function KEYBIND.Menu:CreateProfileSelector(parent)
-    surface.CreateFont("KeybindProfileFont", {
+    -- Create necessary fonts
+    surface.CreateFont("KeybindDropdownTitle", {
         font = "Roboto",
         size = 16,
+        weight = 700,
+        antialias = true
+    })
+    
+    surface.CreateFont("KeybindDropdownText", {
+        font = "Roboto",
+        size = 16,  -- Reduced from 18
         weight = 600,
         antialias = true
     })
+    
+    surface.CreateFont("KeybindDropdownSubtext", {
+        font = "Roboto",
+        size = 14,
+        weight = 400,
+        antialias = true
+    })
 
+    -- Create container panel
     local selector = vgui.Create("DPanel", parent)
     selector:Dock(FILL)
     selector:SetPaintBackground(false)
-
-    local maxProfiles = 3
+    
+    -- Add title label
+    local titleLabel = vgui.Create("DLabel", selector)
+    titleLabel:SetPos(10, 5)  -- Positioned higher
+    titleLabel:SetFont("KeybindDropdownTitle")
+    titleLabel:SetText("ACTIVE PROFILE")
+    titleLabel:SetTextColor(Color(150, 150, 150))
+    titleLabel:SizeToContents()
+    
+    -- Get available profiles
+    local profiles = {}
     local userGroup = LocalPlayer():GetUserGroup()
+    local maxProfiles = 3
     
     if userGroup == "premium" then
         maxProfiles = 5
     elseif userGroup == "loyalty" then
         maxProfiles = 7
     end
-
+    
     local baseProfiles = {
-        {name = "Profile1", displayName = "Profile 1", icon = "Profile1", access = 0}, -- 0 = Default User rank
-        {name = "Profile2", displayName = "Profile 2", icon = "Profile2", access = 0},
-        {name = "Profile3", displayName = "Profile 3", icon = "Profile3", access = 0},
-        {name = "Premium1", displayName = "Premium 4", icon = "Premium1", access = 1}, -- 1 = Premium
-        {name = "Premium2", displayName = "Premium 5", icon = "Premium2", access = 1},
-        {name = "Premium3", displayName = "Loyalty 6", icon = "Premium3", access = 2}, -- 2 = Loyalty
-        {name = "Premium4", displayName = "Loyalty 7", icon = "Premium4", access = 2}
+        {name = "Profile1", displayName = "Profile 1", icon = "Profile1", access = 0, color = Color(60, 130, 200)},
+        {name = "Profile2", displayName = "Profile 2", icon = "Profile2", access = 0, color = Color(60, 130, 200)},
+        {name = "Profile3", displayName = "Profile 3", icon = "Profile3", access = 0, color = Color(60, 130, 200)},
+        {name = "Premium1", displayName = "Premium 4", icon = "Premium1", access = 1, color = Color(200, 130, 60)},
+        {name = "Premium2", displayName = "Premium 5", icon = "Premium2", access = 1, color = Color(200, 130, 60)},
+        {name = "Premium3", displayName = "Loyalty 6", icon = "Premium3", access = 2, color = Color(130, 200, 60)},
+        {name = "Premium4", displayName = "Loyalty 7", icon = "Premium4", access = 2, color = Color(130, 200, 60)}
     }
-
-    local spacing = 8
-    local sideMargin = 10
-    local buttonCount = maxProfiles
-    local availableWidth = parent:GetWide() - (2 * sideMargin) - ((buttonCount - 1) * spacing)
-    local buttonWidth = math.floor(availableWidth / buttonCount)
-    buttonWidth = math.max(buttonWidth, 120)
-
-    local visibleButtons = 0
-
+    
+    -- Populate available profiles
     for i, profileData in ipairs(baseProfiles) do
         -- Check access level
         local hasAccess = false
-        if profileData.access == 0 then -- User rank
+        if profileData.access == 0 then
             hasAccess = true
-        elseif profileData.access == 1 then -- Premium rank
+        elseif profileData.access == 1 then
             hasAccess = userGroup == "premium" or userGroup == "loyalty"
-        elseif profileData.access == 2 then -- Loyalty rank
+        elseif profileData.access == 2 then
             hasAccess = userGroup == "loyalty"
         end
-
-        if hasAccess and visibleButtons < maxProfiles then
-            visibleButtons = visibleButtons + 1
-            
+        
+        if hasAccess and i <= maxProfiles then
             if not KEYBIND.Storage.Profiles[profileData.name] then
                 KEYBIND.Storage.Profiles[profileData.name] = {
                     binds = {},
@@ -185,88 +201,507 @@ function KEYBIND.Menu:CreateProfileSelector(parent)
                     displayName = profileData.displayName
                 }
             end
-
-            local btn = vgui.Create("DButton", selector)
-            btn:SetSize(buttonWidth, parent:GetTall() - 8)
-            btn:SetPos(sideMargin + (visibleButtons - 1) * (buttonWidth + spacing), 4)
-            btn:SetText("")
-
-            btn.profileData = profileData
-
-            btn.Paint = function(self, w, h)
-                local storedProfile = KEYBIND.Storage.Profiles[self.profileData.name]
-                local displayName = storedProfile and (storedProfile.displayName or storedProfile.name) or self.profileData.displayName
-                
-                local isSelected = KEYBIND.Storage.CurrentProfile == self.profileData.name
-                local baseColor = isSelected and KEYBIND.Colors.profileSelected or KEYBIND.Colors.profileUnselected
-                
-                local bgColor = self:IsHovered() and Color(
-                    math.min(baseColor.r + 20, 255),
-                    math.min(baseColor.g + 20, 255),
-                    math.min(baseColor.b + 20, 255)
-                ) or baseColor
-                
-                draw.RoundedBox(6, 0, 0, w, h, bgColor)
-                
-                local iconSize = h * 0.6
-                local iconX = 8
-                local iconY = (h - iconSize) / 2
-                
-                local icon = KEYBIND.Menu.ProfileIcons[self.profileData.icon] or KEYBIND.Menu.DefaultIcon
-                if icon then
-                SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
-                end
-                
-                local textX = iconX + iconSize + 8
-                local textY = h/2
-                local textColor = isSelected and Color(255, 255, 255) or Color(220, 220, 220)
-                
-                draw.SimpleText(displayName, "KeybindProfileFont", textX + 1, textY + 1, 
-                    Color(0, 0, 0, 100), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-
-                draw.SimpleText(displayName, "KeybindProfileFont", textX, textY, 
-                    textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            
+            local storedProfile = KEYBIND.Storage.Profiles[profileData.name]
+            local displayName = storedProfile.displayName or profileData.displayName
+            
+            -- Count binds
+            local bindCount = 0
+            if storedProfile.binds then
+                bindCount = table.Count(storedProfile.binds)
             end
-
-            btn.DoClick = function(self)
-                KEYBIND.Storage.CurrentProfile = self.profileData.name
-                KEYBIND.Storage:SaveBinds()
-                
-                net.Start("KEYBIND_SelectProfile")
-                net.WriteString(self.profileData.name)
-                net.SendToServer()
-                
-                surface.PlaySound("buttons/button14.wav")
-                
-                KEYBIND.Menu:RefreshKeyboardLayout()
-            end
-
-            btn.DoRightClick = function(self)
-                local menu = DermaMenu()
-                menu:AddOption("Rename Profile", function()
-                    Derma_StringRequest(
-                        "Rename Profile",
-                        "Enter new name for " .. self.profileData.displayName,
-                        self.profileData.displayName,
-                        function(newName)
-                            KEYBIND.Storage:RenameProfile(self.profileData.name, newName)
-                        end,
-                        function() end,
-                        "Confirm",
-                        "Cancel"
-                    )
-                end)
-                menu:AddOption("Reset Binds", function()
-                    KEYBIND.Menu:ResetProfileBinds(self.profileData)
-                end)
-                menu:Open()
-            end
-
-            btn:SetTooltip("Left-click to select\nRight-click for options")
+            
+            table.insert(profiles, {
+                name = profileData.name,
+                displayName = displayName,
+                icon = profileData.icon,
+                color = profileData.color,
+                bindCount = bindCount
+            })
         end
     end
-
+    
+    -- Find current profile
+    local selectedProfile = nil
+    for _, profile in ipairs(profiles) do
+        if profile.name == KEYBIND.Storage.CurrentProfile then
+            selectedProfile = profile
+            break
+        end
+    end
+    
+    -- Calculate optimal width for dropdown
+    local optionsButtonWidth = 40
+    local optionsButtonMargin = 10
+    local dropdownMargin = 10
+    local dropdownWidth = parent:GetWide() - optionsButtonWidth - optionsButtonMargin - (dropdownMargin * 2)
+    
+    -- Create dropdown button with increased height
+    local dropdownHeight = 45  -- Increased height for better text visibility
+    local dropdownBtn = vgui.Create("DButton", selector)
+    dropdownBtn:SetSize(dropdownWidth, dropdownHeight)
+    dropdownBtn:SetPos(dropdownMargin, titleLabel:GetTall() + 8)  -- Adjusted position
+    dropdownBtn:SetText("")
+    
+    -- Store dropdown state
+    selector.dropdownOpen = false
+    selector.selectedProfile = selectedProfile
+    
+    -- Custom paint function for the button with fixed positioning
+    dropdownBtn.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        
+        -- Main dropdown box
+        draw.RoundedBox(8, 0, 0, w, h, Color(40, 40, 45))
+        
+        -- Hover effect
+        if hovered then
+            draw.RoundedBox(8, 0, 0, w, h, Color(60, 130, 200, 30))
+        end
+        
+        -- Selected profile display with fixed positioning
+        if selector.selectedProfile then
+            local profile = selector.selectedProfile
+            local textX = 15
+            
+            -- Draw icon at fixed position
+            local icon = KEYBIND.Menu.ProfileIcons[profile.icon]
+            if icon then
+                surface.SetDrawColor(255, 255, 255, 255)
+                surface.SetMaterial(icon)
+                surface.DrawTexturedRect(textX, 8, 24, 24)  -- Fixed position near top
+                textX = textX + 30
+            end
+            
+            -- Calculate available width for text
+            local availableTextWidth = w - textX - 80
+            
+            -- Draw profile name at fixed position
+            local displayName = profile.displayName
+            surface.SetFont("KeybindDropdownText")
+            local textWidth = surface.GetTextSize(displayName)
+            
+            if textWidth > availableTextWidth then
+                local ratio = availableTextWidth / textWidth
+                local charCount = math.floor(#displayName * ratio) - 3
+                displayName = string.sub(displayName, 1, charCount) .. "..."
+            end
+            
+            -- Draw profile name on top line
+            draw.SimpleText(displayName, "KeybindDropdownText", textX, 12, 
+                Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            
+            -- Draw bind count on bottom line
+            local bindText = profile.bindCount .. " binds"
+            draw.SimpleText(bindText, "KeybindDropdownSubtext", textX, 28, 
+                Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            
+            -- Draw arrow at fixed position
+            local arrowSize = 8
+            local arrowX = w - 20
+            local arrowY = h / 2
+            
+            surface.SetDrawColor(230, 230, 230, 200)
+            surface.DrawLine(arrowX - arrowSize, arrowY - arrowSize/2, arrowX, arrowY + arrowSize/2)
+            surface.DrawLine(arrowX, arrowY + arrowSize/2, arrowX + arrowSize, arrowY - arrowSize/2)
+        else
+            -- Draw "Select a Profile" text at fixed position
+            draw.SimpleText("Select a Profile", "KeybindDropdownText", 15, h/2 - 2, 
+                Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                
+            -- Draw arrow
+            local arrowSize = 8
+            local arrowX = w - 20
+            local arrowY = h / 2
+            
+            surface.SetDrawColor(230, 230, 230, 200)
+            surface.DrawLine(arrowX - arrowSize, arrowY - arrowSize/2, arrowX, arrowY + arrowSize/2)
+            surface.DrawLine(arrowX, arrowY + arrowSize/2, arrowX + arrowSize, arrowY - arrowSize/2)
+        end
+    end
+    
+    -- Create the actual dropdown as a separate panel
+    local function CreateDropdownPanel()
+        -- Remove existing dropdown if it exists
+        if IsValid(selector.dropdownPanel) then
+            selector.dropdownPanel:Remove()
+        end
+        
+        -- Get position relative to screen
+        local x, y = dropdownBtn:LocalToScreen(0, dropdownHeight)
+        
+        -- Create dropdown panel
+        local dropdownPanel = vgui.Create("DPanel")
+        dropdownPanel:SetSize(dropdownBtn:GetWide(), #profiles * dropdownHeight)
+        dropdownPanel:SetPos(x, y)
+        dropdownPanel:MakePopup()
+        dropdownPanel:SetKeyboardInputEnabled(false) -- Don't steal keyboard focus
+        dropdownPanel:SetZPos(32767) -- Ensure it's on top
+        
+        -- Store reference
+        selector.dropdownPanel = dropdownPanel
+        
+        -- Custom paint function
+        dropdownPanel.Paint = function(self, w, h)
+            -- Draw dropdown list background
+            draw.RoundedBoxEx(8, 0, 0, w, h, Color(45, 45, 50), false, false, true, true)
+            
+            -- Draw profile options
+            for i, profile in ipairs(profiles) do
+                local itemY = (i-1) * dropdownHeight
+                
+                -- Hover detection for each item
+                local itemHovered = self:IsHovered() and self.mouseY and 
+                                   self.mouseY > itemY and self.mouseY < itemY + dropdownHeight
+                
+                -- Item background
+                if itemHovered then
+                    draw.RoundedBox(0, 0, itemY, w, dropdownHeight, Color(60, 130, 200, 50))
+                end
+                
+                -- Selected item indicator
+                if profile.name == KEYBIND.Storage.CurrentProfile then
+                    draw.RoundedBox(0, 0, itemY, 4, dropdownHeight, profile.color)
+                end
+                
+                -- Draw icon at fixed position
+                local icon = KEYBIND.Menu.ProfileIcons[profile.icon]
+                if icon then
+                    surface.SetDrawColor(255, 255, 255, 255)
+                    surface.SetMaterial(icon)
+                    surface.DrawTexturedRect(15, itemY + 8, 24, 24)
+                end
+                
+                -- Calculate available width for text
+                local textX = 45
+                local availableTextWidth = w - textX - 80
+                
+                -- Draw profile name with ellipsis if needed
+                local displayName = profile.displayName
+                surface.SetFont("KeybindDropdownText")
+                local textWidth = surface.GetTextSize(displayName)
+                
+                if textWidth > availableTextWidth then
+                    local ratio = availableTextWidth / textWidth
+                    local charCount = math.floor(#displayName * ratio) - 3
+                    displayName = string.sub(displayName, 1, charCount) .. "..."
+                end
+                
+                -- Draw profile name on top line
+                draw.SimpleText(displayName, "KeybindDropdownText", textX, itemY + 12, 
+                    Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                
+                -- Draw bind count on bottom line
+                local bindText = profile.bindCount .. " binds"
+                draw.SimpleText(bindText, "KeybindDropdownSubtext", textX, itemY + 28, 
+                    Color(150, 150, 150), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+                
+                -- Add separator line except for last item
+                if i < #profiles then
+                    surface.SetDrawColor(60, 60, 65)
+                    surface.DrawLine(0, itemY + dropdownHeight, w, itemY + dropdownHeight)
+                end
+            end
+        end
+        
+        -- Track mouse position for hover effects
+        dropdownPanel.OnCursorMoved = function(self, x, y)
+            self.mouseY = y
+        end
+        
+        -- Handle clicks
+        dropdownPanel.OnMousePressed = function(self, mouseCode)
+            if mouseCode == MOUSE_LEFT then
+                local itemIndex = math.floor(self.mouseY / dropdownHeight) + 1
+                
+                if itemIndex >= 1 and itemIndex <= #profiles then
+                    local profile = profiles[itemIndex]
+                    
+                    if profile.name ~= KEYBIND.Storage.CurrentProfile then
+                        -- Select the profile
+                        KEYBIND.Storage.CurrentProfile = profile.name
+                        selector.selectedProfile = profile
+                        KEYBIND.Storage:SaveBinds()
+                        
+                        net.Start("KEYBIND_SelectProfile")
+                        net.WriteString(profile.name)
+                        net.SendToServer()
+                        
+                        surface.PlaySound("buttons/button14.wav")
+                        
+                        KEYBIND.Menu:RefreshKeyboardLayout()
+                    end
+                end
+                
+                -- Close dropdown
+                selector.dropdownOpen = false
+                self:Remove()
+            end
+        end
+        
+        -- Close dropdown when clicking elsewhere
+        dropdownPanel.Think = function(self)
+            if not self:IsHovered() and input.IsMouseDown(MOUSE_LEFT) then
+                selector.dropdownOpen = false
+                self:Remove()
+            end
+        end
+    end
+    
+    -- Toggle dropdown on button click
+    dropdownBtn.DoClick = function()
+        selector.dropdownOpen = not selector.dropdownOpen
+        
+        if selector.dropdownOpen then
+            CreateDropdownPanel()
+            surface.PlaySound("buttons/button14.wav")
+        else
+            if IsValid(selector.dropdownPanel) then
+                selector.dropdownPanel:Remove()
+            end
+        end
+    end
+    
+    -- Add options button
+    local optionsBtn = vgui.Create("DButton", selector)
+    optionsBtn:SetSize(optionsButtonWidth, 40)
+    optionsBtn:SetPos(parent:GetWide() - optionsButtonWidth - optionsButtonMargin, titleLabel:GetTall() + 5)
+    optionsBtn:SetText("")
+    optionsBtn:SetTooltip("Profile Options")
+    
+    optionsBtn.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(60, 130, 200, 200) or Color(50, 50, 55)
+        
+        draw.RoundedBox(8, 0, 0, w, h, color)
+        
+        -- Draw three dots
+        local dotSize = 4
+        local spacing = 8
+        local startX = w/2 - spacing
+        local y = h/2
+        
+        for i = 0, 2 do
+            draw.RoundedBox(dotSize, startX + i * spacing, y - dotSize/2, dotSize, dotSize, Color(230, 230, 230))
+        end
+    end
+    
+    optionsBtn.DoClick = function()
+        -- Close dropdown if open
+        if selector.dropdownOpen and IsValid(selector.dropdownPanel) then
+            selector.dropdownOpen = false
+            selector.dropdownPanel:Remove()
+        end
+        
+        local menu = DermaMenu()
+        
+        if selector.selectedProfile then
+            menu:AddOption("Rename Profile", function()
+                local profile = selector.selectedProfile
+                
+                Derma_StringRequest(
+                    "Rename Profile",
+                    "Enter new name for " .. profile.displayName,
+                    profile.displayName,
+                    function(newName)
+                        KEYBIND.Storage:RenameProfile(profile.name, newName)
+                        
+                        -- Update the selected profile
+                        profile.displayName = newName
+                        
+                        -- Refresh the menu
+                        KEYBIND.Menu:RefreshKeyboardLayout()
+                    end,
+                    function() end,
+                    "Confirm",
+                    "Cancel"
+                )
+            end)
+            
+            menu:AddOption("Reset Profile Binds", function()
+                local profile = selector.selectedProfile
+                
+                Derma_Query(
+                    "Are you sure you want to reset all binds for " .. profile.displayName .. "?",
+                    "Confirm Reset",
+                    "Yes", function()
+                        KEYBIND.Storage.Profiles[profile.name].binds = {}
+                        KEYBIND.Storage:SaveBinds()
+                        
+                        -- Update bind count
+                        profile.bindCount = 0
+                        
+                        -- Refresh the menu
+                        KEYBIND.Menu:RefreshKeyboardLayout()
+                        
+                        if KEYBIND.Settings.Config.showFeedback then
+                            chat.AddText(Color(0, 255, 0), "[BindMenu] Reset all binds for profile: " .. profile.displayName)
+                        end
+                    end,
+                    "No", function() end
+                )
+            end)
+            
+            menu:AddSpacer()
+        end
+        
+        menu:AddOption("Settings", function()
+            KEYBIND.Settings:Create()
+        end)
+        
+        menu:Open()
+    end
+    
+    -- Clean up when parent is removed
+    parent.OnRemove = function()
+        if IsValid(selector.dropdownPanel) then
+            selector.dropdownPanel:Remove()
+        end
+    end
+    
     return selector
+end
+
+function KEYBIND.Settings:CreateProfilePictureSelector(parent, profileName)
+    local storedProfile = KEYBIND.Storage.Profiles[profileName]
+    if not storedProfile then return end
+    
+    -- Create container panel
+    local container = vgui.Create("DPanel", parent)
+    container:SetSize(parent:GetWide(), 240)
+    container:Dock(TOP)
+    container:DockMargin(0, 10, 0, 10)
+    container:SetPaintBackground(false)
+    
+    -- Create title
+    local title = vgui.Create("DLabel", container)
+    title:SetText("Profile Picture")
+    title:SetFont("KeybindSettingsText")
+    title:SetTextColor(Color(230, 230, 230))
+    title:SizeToContents()
+    title:SetPos(10, 5)
+    
+    -- Get current icon
+    local currentIcon = storedProfile.icon or "Profile1"
+    
+    -- Create icon grid
+    local iconGrid = vgui.Create("DIconLayout", container)
+    iconGrid:SetPos(10, 30)
+    iconGrid:SetSize(container:GetWide() - 20, 200)
+    iconGrid:SetSpaceX(10)
+    iconGrid:SetSpaceY(10)
+    
+    -- Define available icons
+    local availableIcons = {
+        -- Standard icons
+        {name = "Profile1", displayName = "Default 1", category = "Standard"},
+        {name = "Profile2", displayName = "Default 2", category = "Standard"},
+        {name = "Profile3", displayName = "Default 3", category = "Standard"},
+        
+        -- Premium icons
+        {name = "Premium1", displayName = "Diamond Green", category = "Premium", access = 1},
+        {name = "Premium2", displayName = "Diamond Blue", category = "Premium", access = 1},
+        
+        -- Loyalty icons
+        {name = "Premium3", displayName = "Diamond Orange", category = "Loyalty", access = 2},
+        {name = "Premium4", displayName = "Diamond Yellow", category = "Loyalty", access = 2}
+    }
+    
+    -- Get user access level
+    local userGroup = LocalPlayer():GetUserGroup()
+    local accessLevel = 0
+    
+    if userGroup == "loyalty" then
+        accessLevel = 2
+    elseif userGroup == "premium" then
+        accessLevel = 1
+    end
+    
+    -- Track categories we've seen
+    local categories = {}
+    
+    -- Add icons to grid
+    for _, iconData in ipairs(availableIcons) do
+        -- Check access level
+        local hasAccess = true
+        if iconData.access then
+            hasAccess = accessLevel >= iconData.access
+        end
+        
+        if hasAccess then
+            -- Add category header if we haven't seen this category yet
+            if not categories[iconData.category] then
+                categories[iconData.category] = true
+                
+                local categoryPanel = iconGrid:Add("DPanel")
+                categoryPanel:SetSize(iconGrid:GetWide() - 10, 30)
+                categoryPanel:SetPaintBackground(false)
+                
+                local categoryLabel = vgui.Create("DLabel", categoryPanel)
+                categoryLabel:SetText(iconData.category .. " Icons")
+                categoryLabel:SetFont("KeybindSettingsText")
+                categoryLabel:SetTextColor(Color(180, 180, 180))
+                categoryLabel:SizeToContents()
+                categoryLabel:SetPos(5, 5)
+            end
+            
+            -- Create icon button
+            local iconBtn = iconGrid:Add("DButton")
+            iconBtn:SetSize(60, 60)
+            iconBtn:SetText("")
+            
+            -- Get icon material
+            local iconMat = KEYBIND.Menu.ProfileIcons[iconData.name]
+            
+            iconBtn.Paint = function(self, w, h)
+                local isSelected = currentIcon == iconData.name
+                local isHovered = self:IsHovered()
+                
+                -- Background
+                local bgColor = isSelected and Color(60, 130, 200) or (isHovered and Color(50, 50, 55) or Color(40, 40, 45))
+                draw.RoundedBox(8, 0, 0, w, h, bgColor)
+                
+                -- Icon
+                if iconMat then
+                    surface.SetDrawColor(255, 255, 255, 255)
+                    surface.SetMaterial(iconMat)
+                    surface.DrawTexturedRect(w/2 - 20, h/2 - 20, 40, 40)
+                else
+                    -- Fallback if icon is missing
+                    draw.SimpleText("?", "DermaLarge", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                end
+                
+                -- Selection indicator
+                if isSelected then
+                    surface.SetDrawColor(255, 255, 255, 100)
+                    surface.DrawOutlinedRect(0, 0, w, h, 2)
+                end
+            end
+            
+            -- Tooltip
+            iconBtn:SetTooltip(iconData.displayName)
+            
+            -- Click handler
+            iconBtn.DoClick = function()
+                -- Update profile icon
+                storedProfile.icon = iconData.name
+                currentIcon = iconData.name
+                
+                -- Save to storage
+                KEYBIND.Storage:SaveBinds()
+                
+                -- Play sound
+                surface.PlaySound("buttons/button14.wav")
+                
+                -- Show feedback
+                if KEYBIND.Settings.Config.showFeedback then
+                    chat.AddText(Color(0, 255, 0), "[BindMenu] Profile picture updated")
+                end
+            end
+        end
+    end
+    
+    return container
 end
 
 
@@ -281,74 +716,126 @@ function KEYBIND.Menu:Create()
         self.Frame:Remove()
     end
 
-    self.Frame = vgui.Create("DFrame")
+    -- Create fonts for the menu
+    surface.CreateFont("KeybindMenuTitle", {
+        font = "Roboto",
+        size = 24,
+        weight = 600,
+        antialias = true
+    })
+    
+    surface.CreateFont("KeybindMenuSubtitle", {
+        font = "Roboto",
+        size = 18,
+        weight = 500,
+        antialias = true
+    })
+
+    -- Calculate responsive size
     local screenW, screenH = ScrW(), ScrH()
     local frameW = math.min(1485, screenW * 0.9)
     local frameH = math.min(550, screenH * 0.8)
+
+    -- Create the main frame with modern styling
+    self.Frame = vgui.Create("DFrame")
     self.Frame:SetSize(frameW, frameH)
     self.Frame:Center()
     self.Frame:SetTitle("")
     self.Frame:MakePopup()
     self.Frame:ShowCloseButton(false)
-    self.Frame:SetDraggable(false)
+    self.Frame:SetDraggable(true)
 
+    -- Modern dark theme with blur
     self.Frame.Paint = function(self, w, h)
-        draw.RoundedBox(0, 0, 0, w, h, KEYBIND.Colors.background)
+        Derma_DrawBackgroundBlur(self, 0)
         
-        local kbX, kbY = 50, 80  
-        local kbW, kbH = w - 100, 400 
-        draw.RoundedBox(4, kbX, kbY, kbW, kbH, KEYBIND.Colors.sectionBackground)
+        -- Main background
+        draw.RoundedBox(10, 0, 0, w, h, Color(20, 20, 25, 240))
+        
+        -- Top accent bar
+        draw.RoundedBoxEx(10, 0, 0, w, 60, Color(40, 90, 140), true, true, false, false)
+        
+        -- Title with shadow
+        draw.SimpleText("", "KeybindMenuTitle", 25, 30, Color(0, 0, 0, 100), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText("", "KeybindMenuTitle", 24, 29, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        
+        -- Keyboard area background
+        local kbX, kbY = 50, 70
+        local kbW, kbH = w - 100, 400
+        draw.RoundedBox(8, kbX, kbY, kbW, kbH, Color(30, 30, 35))
     end
 
-    local profileSelector = vgui.Create("DPanel", self.Frame)
-    profileSelector:SetPos(50, 20)  
-    profileSelector:SetSize(self.Frame:GetWide() - 100, 40)  
-    profileSelector:SetPaintBackground(false)
-    self:CreateProfileSelector(profileSelector)
-
-    local startX = 50
-    local startY = 80
-    local sectionSpacing = 5
-    local keyboardContainer = vgui.Create("DPanel", self.Frame)
-    keyboardContainer:SetPos(50, 80)
-    keyboardContainer:SetSize(self.Frame:GetWide() - 100, 400)
-    keyboardContainer:SetPaintBackground(false)
-
-    self:RenderCompleteKeyboard(keyboardContainer)
-
+    -- Modern close button
     local closeBtn = vgui.Create("DButton", self.Frame)
-    closeBtn:SetSize(30, 30)
-    closeBtn:SetPos(self.Frame:GetWide() - 40, 10)
+    closeBtn:SetSize(40, 40)
+    closeBtn:SetPos(self.Frame:GetWide() - 50, 10)
     closeBtn:SetText("")
     closeBtn.Paint = function(self, w, h)
-        draw.RoundedBox(4, 0, 0, w, h, self:IsHovered() and Color(255, 80, 80) or Color(200, 60, 60))
-        draw.SimpleText("✕", "DermaLarge", w/2, h/2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(255, 80, 80, 200) or Color(255, 255, 255, 30)
+        
+        draw.RoundedBox(8, 0, 0, w, h, color)
+        
+        -- X icon
+        local thickness = 2
+        local padding = 14
+        local color = hovered and Color(255, 255, 255) or Color(220, 220, 220)
+        
+        surface.SetDrawColor(color)
+        surface.DrawLine(padding, padding, w-padding, h-padding)
+        surface.DrawLine(w-padding, padding, padding, h-padding)
     end
     closeBtn.DoClick = function()
         self:CleanUp()
         self.Frame:Remove()
     end
 
+    -- Settings button with modern styling
     local settingsBtn = vgui.Create("DButton", self.Frame)
-    settingsBtn:SetSize(30, 30)  
-    settingsBtn:SetPos(self.Frame:GetWide() - 40, 45)  
+    settingsBtn:SetSize(40, 40)
+    settingsBtn:SetPos(self.Frame:GetWide() - 100, 10)
     settingsBtn:SetText("")
-
+    
     local gear = Material("bindmenu/settings.png")
-
+    
     settingsBtn.Paint = function(self, w, h)
-        draw.RoundedBox(4, 0, 0, w, h, self:IsHovered() and KEYBIND.Colors.keyHover or KEYBIND.Colors.keyDefault)
-        surface.SetDrawColor(255, 255, 255, 255)
-        surface.SetMaterial(gear)
-        surface.DrawTexturedRect(w/2-8, h/2-8, 16, 16)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(60, 130, 200, 200) or Color(255, 255, 255, 30)
+        
+        draw.RoundedBox(8, 0, 0, w, h, color)
+        
+        if gear and !gear:IsError() then
+            surface.SetDrawColor(255, 255, 255, 255)
+            surface.SetMaterial(gear)
+            surface.DrawTexturedRect(w/2-10, h/2-10, 20, 20)
+        else
+            -- Fallback if icon is missing
+            draw.SimpleText("⚙", "KeybindMenuTitle", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        end
     end
-
+    
     settingsBtn.DoClick = function()
         surface.PlaySound("buttons/button14.wav")
         KEYBIND.Settings:Create()
     end
-
+    
     settingsBtn:SetTooltip("Open Settings")
+
+    -- Create profile selector with modern styling
+    local profileSelector = vgui.Create("DPanel", self.Frame)
+    profileSelector:SetPos(50, 10)
+    profileSelector:SetSize(self.Frame:GetWide() - 160, 40)
+    profileSelector:SetPaintBackground(false)
+    self:CreateProfileSelector(profileSelector)
+
+    -- Create keyboard container (keep existing keyboard layout)
+    local keyboardContainer = vgui.Create("DPanel", self.Frame)
+    keyboardContainer:SetPos(50, 70)
+    keyboardContainer:SetSize(self.Frame:GetWide() - 100, 400)
+    keyboardContainer:SetPaintBackground(false)
+
+    -- Render the keyboard (keep existing implementation)
+    self:RenderCompleteKeyboard(keyboardContainer)
 end
 
 function KEYBIND.Menu:CreateKeyButton(parent, key, xPos, yPos, keyWidth, keyHeight, properties)
@@ -358,52 +845,136 @@ function KEYBIND.Menu:CreateKeyButton(parent, key, xPos, yPos, keyWidth, keyHeig
     keyBtn:SetText("")  
 
     local hue = 0
-    local roundness = 4
+    local roundness = 6 -- Increased roundness for modern look
+    local fullKey = (properties and properties.prefix or "") .. key
+
+    -- Create a font for the key text based on key size
+    local fontSize = math.min(keyHeight, keyWidth) * 0.4
+    local fontName = "KeybindKeyFont_" .. fontSize
+    
+    if not _G[fontName] then
+        surface.CreateFont(fontName, {
+            font = "Roboto",
+            size = fontSize,
+            weight = 600,
+            antialias = true
+        })
+        _G[fontName] = true
+    end
 
     keyBtn.Paint = function(self, w, h)
         local profile = KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile]
         if profile then
-            local bound = profile.binds[(properties.prefix or "") .. key]
-            local textColor = KEYBIND.Colors.text 
+            local bound = profile.binds[fullKey]
+            local textColor = Color(230, 230, 230) -- Brighter text for better contrast
 
             if bound then
-                hue = (hue + 1) % 360  
-                local boundColor = HSVToColor(hue, 1, 1)
+                -- Rainbow effect for bound keys
+                hue = (hue + 0.5) % 360  
+                local boundColor = HSVToColor(hue, 0.7, 0.9) -- Less saturated, brighter colors
+                
+                -- Key with shadow effect
+                draw.RoundedBox(roundness, 2, 2, w-4, h-4, Color(0, 0, 0, 100))
                 draw.RoundedBox(roundness, 0, 0, w, h, boundColor)
-                textColor = Color(255, 255, 255)  
+                
+                -- Add subtle gradient
+                surface.SetDrawColor(255, 255, 255, 30)
+                surface.SetMaterial(Material("gui/gradient_up"))
+                surface.DrawTexturedRect(0, 0, w, h)
+                
+                -- Add subtle inner border
+                surface.SetDrawColor(255, 255, 255, 50)
+                surface.DrawOutlinedRect(2, 2, w-4, h-4, 1)
+                
+                textColor = Color(255, 255, 255)
             else
-                draw.RoundedBox(roundness, 0, 0, w, h, self:IsHovered() and KEYBIND.Colors.keyHover or KEYBIND.Colors.keyDefault)
+                -- Unbounded key with modern styling
+                local baseColor = self:IsHovered() and Color(50, 50, 55) or Color(40, 40, 45)
+                
+                -- Key with shadow effect
+                draw.RoundedBox(roundness, 2, 2, w-4, h-4, Color(0, 0, 0, 50))
+                draw.RoundedBox(roundness, 0, 0, w, h, baseColor)
+                
+                -- Add subtle highlight on hover
+                if self:IsHovered() then
+                    surface.SetDrawColor(255, 255, 255, 15)
+                    surface.SetMaterial(Material("gui/gradient_up"))
+                    surface.DrawTexturedRect(0, 0, w, h)
+                    
+                    -- Add subtle border on hover
+                    surface.SetDrawColor(80, 150, 220, 100)
+                    surface.DrawOutlinedRect(1, 1, w-2, h-2, 1)
+                end
             end
 
-            local keyText = (properties and properties.prefix == "KP_" and key == "KP_ENTER") and "ENTER" or key
+            local keyText = key
+            if properties and properties.prefix == "KP_" and key == "ENTER" then
+                keyText = "ENTER"
+            elseif key == "SPACE" then
+                keyText = "SPACE"
+            elseif #key > 5 then
+                -- Abbreviate long key names
+                if key == "BACKSPACE" then keyText = "BKSP"
+                elseif key == "CAPSLOCK" then keyText = "CAPS"
+                elseif key == "CTRL" then keyText = "CTRL"
+                elseif key == "SHIFT" then keyText = "SHFT"
+                elseif key == "ENTER" then keyText = "ENTR"
+                elseif key == "DELETE" then keyText = "DEL"
+                elseif key == "INSERT" then keyText = "INS"
+                elseif key == "PAGEUP" then keyText = "PGUP"
+                elseif key == "PAGEDOWN" then keyText = "PGDN"
+                end
+            end
 
             if properties and properties.isVertical then
-                surface.SetFont("DermaDefault")
+                -- Handle vertical text
+                local textRotation = 90
+                local centerX = w / 2
+                local centerY = h / 2
+                
+                surface.SetFont(fontName)
                 local tw, th = surface.GetTextSize(keyText)
-                local tx = w / 2 - th / 2
-                local ty = h / 2 - tw / 2
-                surface.SetTextColor(textColor)
-                surface.SetTextPos(tx, ty)
+                
+                -- Draw shadow
+                surface.SetTextColor(0, 0, 0, 100)
+                surface.SetTextPos(centerX - tw/2 + 1, centerY - th/2 + 1)
+                surface.DrawText(keyText)
+                
+                -- Draw text
+                surface.SetTextColor(textColor.r, textColor.g, textColor.b, textColor.a)
+                surface.SetTextPos(centerX - tw/2, centerY - th/2)
                 surface.DrawText(keyText)
             else
-                draw.SimpleText(keyText, "DermaDefault", w/2, h/2, textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                -- Draw text with shadow for depth
+                draw.SimpleText(keyText, fontName, w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                draw.SimpleText(keyText, fontName, w/2, h/2, textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                
+                -- Add a small indicator dot for bound keys
+                if bound then
+                    local dotSize = 4
+                    draw.RoundedBox(dotSize/2, w-dotSize-3, 3, dotSize, dotSize, Color(255, 255, 255, 200))
+                end
             end
         else
-            draw.RoundedBox(roundness, 0, 0, w, h, KEYBIND.Colors.keyDefault)
-            draw.SimpleText("X", "DermaDefault", w/2, h/2, Color(255, 0, 0), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+            -- Error state
+            draw.RoundedBox(roundness, 0, 0, w, h, Color(35, 35, 40))
+            draw.SimpleText("X", fontName, w/2, h/2, Color(255, 0, 0), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end
     end
-
-
 
     keyBtn.OnCursorEntered = function(self) 
         local profile = KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile]
         if not profile then return end
-        local bound = profile.binds[(properties.prefix or "") .. key]
-        self:SetTooltip(bound and "Bound to: " .. bound .. "\nClick to modify" or "Click to set bind")
+        local bound = profile.binds[fullKey]
+        
+        if bound then
+            self:SetTooltip("Bound to: " .. bound .. "\nClick to modify")
+        else
+            self:SetTooltip("Click to set bind")
+        end
+        
         surface.PlaySound("buttons/button15.wav")
     end
-
 
     keyBtn.DoClick = function()
         if not KEYBIND.Storage.CurrentProfile then
@@ -411,11 +982,12 @@ function KEYBIND.Menu:CreateKeyButton(parent, key, xPos, yPos, keyWidth, keyHeig
             return
         end
         surface.PlaySound("buttons/button14.wav")
-        self:OpenBindDialog((properties.prefix or "") .. key)
+        self:OpenBindDialog(fullKey)
     end
 
     return keyBtn
 end
+
 
 function KEYBIND.Menu:CalculateSectionWidth(section)
     local maxWidth = 0
@@ -446,6 +1018,23 @@ function KEYBIND.Menu:CalculateSectionWidth(section)
 end
 
 function KEYBIND.Menu:RenderCompleteKeyboard(container)
+    -- Add a background panel for the keyboard with modern styling
+    local keyboardBg = vgui.Create("DPanel", container)
+    keyboardBg:Dock(FILL)
+    keyboardBg.Paint = function(self, w, h)
+        -- Subtle background for the keyboard area
+        draw.RoundedBox(8, 0, 0, w, h, Color(25, 25, 30))
+        
+        -- Add subtle grid pattern
+        surface.SetDrawColor(40, 40, 45, 50)
+        for x = 0, w, 20 do
+            surface.DrawLine(x, 0, x, h)
+        end
+        for y = 0, h, 20 do
+            surface.DrawLine(0, y, w, y)
+        end
+    end
+    
     local layout = self.CompleteKeyboardLayout
     local sectionSpacing = 45 
     
@@ -457,10 +1046,41 @@ function KEYBIND.Menu:RenderCompleteKeyboard(container)
     
     layout.numpadSection.startX = layout.navSection.startX + navWidth + sectionSpacing
 
+    -- Add section labels
+    local mainLabel = vgui.Create("DLabel", container)
+    mainLabel:SetPos(layout.mainSection.startX, layout.mainSection.startY - 25)
+    mainLabel:SetFont("KeybindSettingsText")
+    mainLabel:SetText("")
+    mainLabel:SetTextColor(Color(150, 150, 150))
+    mainLabel:SizeToContents()
+    
+    local navLabel = vgui.Create("DLabel", container)
+    navLabel:SetPos(layout.navSection.startX, layout.navSection.startY - 25)
+    navLabel:SetFont("KeybindSettingsText")
+    navLabel:SetText("")
+    navLabel:SetTextColor(Color(150, 150, 150))
+    navLabel:SizeToContents()
+    
+    local numpadLabel = vgui.Create("DLabel", container)
+    numpadLabel:SetPos(layout.numpadSection.startX, layout.numpadSection.startY - 25)
+    numpadLabel:SetFont("KeybindSettingsText")
+    numpadLabel:SetText("")
+    numpadLabel:SetTextColor(Color(150, 150, 150))
+    numpadLabel:SizeToContents()
+
     self:RenderKeyboardSection(container, layout.mainSection)
     self:RenderKeyboardSection(container, layout.navSection)
     self:RenderKeyboardSection(container, layout.numpadSection)
+    
+    -- Add a help text at the bottom
+    local helpText = vgui.Create("DLabel", container)
+    helpText:SetPos(layout.mainSection.startX, container:GetTall() - 25)
+    helpText:SetFont("KeybindSettingsText")
+    helpText:SetText("Click on any key to set or modify a bind.                                                                                                                  Profile selector at the top allows for you to have multiple binds set to 1 key and easily switch between them in an instance.")
+    helpText:SetTextColor(Color(150, 150, 150))
+    helpText:SizeToContents()
 end
+
 
 function KEYBIND.Menu:RenderKeyboardSection(container, section)
     local xPos = section.startX
@@ -492,17 +1112,12 @@ function KEYBIND.Menu:RenderKeyboardSection(container, section)
                     isVertical = false,
                     prefix = ""
                 }
-                print("Warning: Unknown keyData[2] type for key '" .. key .. "'. Using default properties.")
             end
             
             if key ~= "" then
                 local keyWidth = keySize * properties.width
                 local keyHeight = keySize * properties.height
                 
-                if properties and properties.prefix == "KP_" and key == "KP_ENTER" then
-                    keyText = "ENTER"
-                end
-
                 if properties.isVertical then
                     keyWidth, keyHeight = keyHeight, keyWidth
                 end
@@ -622,17 +1237,117 @@ function KEYBIND.Menu:OpenRenameDialog(profile)
 end
 
 function KEYBIND.Menu:ResetProfileBinds(profile)
-    Derma_Query(
-        "Are you sure you want to reset all binds for this profile?",
-        "Confirm Reset",
-        "Yes",
-        function()
-            KEYBIND.Storage.Profiles[profile.name].binds = {}
-            KEYBIND.Storage:SaveBinds()
-            self:RefreshKeyboardLayout()
-        end,
-        "No"
-    )
+    local dialog = vgui.Create("DFrame")
+    dialog:SetSize(350, 150)
+    dialog:Center()
+    dialog:SetTitle("")
+    dialog:MakePopup()
+    dialog:ShowCloseButton(false)
+    dialog:SetDraggable(true)
+    
+    dialog.Paint = function(self, w, h)
+        Derma_DrawBackgroundBlur(self, 0)
+        
+        -- Main background with rounded corners
+        draw.RoundedBox(10, 0, 0, w, h, Color(20, 20, 25, 240))
+        
+        -- Header bar
+        draw.RoundedBoxEx(10, 0, 0, w, 40, Color(200, 60, 60), true, true, false, false)
+        
+        -- Header text with shadow
+        draw.SimpleText("Confirm Reset", "BindDialogFont", 15, 20, Color(0, 0, 0, 100), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Confirm Reset", "BindDialogFont", 14, 19, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        
+        -- Message
+        draw.SimpleText("Are you sure you want to reset all binds", "BindDialogFont", w/2, 60, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("for this profile?", "BindDialogFont", w/2, 80, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    
+    -- Modern close button
+    local closeBtn = vgui.Create("DButton", dialog)
+    closeBtn:SetSize(30, 30)
+    closeBtn:SetPos(dialog:GetWide() - 40, 5)
+    closeBtn:SetText("")
+    closeBtn.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(255, 80, 80, 200) or Color(255, 255, 255, 30)
+        
+        draw.RoundedBox(8, 0, 0, w, h, color)
+        
+        -- X icon
+        local padding = 10
+        local color = hovered and Color(255, 255, 255) or Color(220, 220, 220)
+        
+        surface.SetDrawColor(color)
+        surface.DrawLine(padding, padding, w-padding, h-padding)
+        surface.DrawLine(w-padding, padding, padding, h-padding)
+    end
+    closeBtn.DoClick = function() dialog:Remove() end
+    
+    -- Button container
+    local buttonContainer = vgui.Create("DPanel", dialog)
+    buttonContainer:SetPos(15, dialog:GetTall() - 50)
+    buttonContainer:SetSize(dialog:GetWide() - 30, 36)
+    buttonContainer:SetPaintBackground(false)
+    
+    -- Yes button
+    local btnYes = vgui.Create("DButton", buttonContainer)
+    btnYes:SetSize((buttonContainer:GetWide() - 10) * 0.5, 36)
+    btnYes:Dock(LEFT)
+    btnYes:SetText("")
+    
+    btnYes.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(220, 70, 70) or Color(200, 60, 60)
+        
+        draw.RoundedBox(6, 0, 0, w, h, color)
+        
+        -- Add subtle gradient
+        surface.SetDrawColor(255, 255, 255, 15)
+        surface.SetMaterial(Material("gui/gradient_up"))
+        surface.DrawTexturedRect(0, 0, w, h)
+        
+        -- Text with shadow
+        draw.SimpleText("Yes, Reset", "BindDialogFont", w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Yes, Reset", "BindDialogFont", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    
+    -- No button
+    local btnNo = vgui.Create("DButton", buttonContainer)
+    btnNo:SetSize((buttonContainer:GetWide() - 10) * 0.5, 36)
+    btnNo:Dock(RIGHT)
+    btnNo:SetText("")
+    
+    btnNo.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(70, 70, 75) or Color(60, 60, 65)
+        
+        draw.RoundedBox(6, 0, 0, w, h, color)
+        
+        -- Add subtle gradient
+        surface.SetDrawColor(255, 255, 255, 15)
+        surface.SetMaterial(Material("gui/gradient_up"))
+        surface.DrawTexturedRect(0, 0, w, h)
+        
+        -- Text with shadow
+        draw.SimpleText("Cancel", "BindDialogFont", w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Cancel", "BindDialogFont", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+    
+    btnYes.DoClick = function()
+        KEYBIND.Storage.Profiles[profile.name].binds = {}
+        KEYBIND.Storage:SaveBinds()
+        self:RefreshKeyboardLayout()
+        dialog:Remove()
+        
+        if KEYBIND.Settings.Config.showFeedback then
+            chat.AddText(Color(0, 255, 0), "[BindMenu] Reset all binds for profile: " .. profile.displayName)
+        end
+    end
+    
+    btnNo.DoClick = function()
+        dialog:Remove()
+    end
 end
 
 function KEYBIND.Menu:CreateKeyboardLayout(parent)
@@ -827,11 +1542,11 @@ function KEYBIND.Menu:OpenBindDialog(key)
     dialog:SetTitle("")
     dialog:MakePopup()
     dialog:ShowCloseButton(false)
-    dialog:SetDraggable(false)
-    dialog:SetPaintShadow(true)  
-    dialog:DockPadding(5, 5, 5, 5)  
+    dialog:SetDraggable(true)
+    dialog:SetPaintShadow(true)
+    dialog:DockPadding(5, 5, 5, 5)
 
-        surface.CreateFont("BindDialogFont", {
+    surface.CreateFont("BindDialogFont", {
         font = "Roboto",
         size = 16,
         weight = 500,
@@ -839,148 +1554,153 @@ function KEYBIND.Menu:OpenBindDialog(key)
         shadow = false
     })
     
-dialog.Paint = function(self, w, h)
-
-    Derma_DrawBackgroundBlur(self, 0)
+    dialog.Paint = function(self, w, h)
+        Derma_DrawBackgroundBlur(self, 0)
+        
+        -- Main background with rounded corners
+        draw.RoundedBox(10, 0, 0, w, h, Color(20, 20, 25, 240))
+        
+        -- Header bar
+        draw.RoundedBoxEx(10, 0, 0, w, 40, Color(40, 90, 140), true, true, false, false)
+        
+        -- Header text with shadow
+        draw.SimpleText("Set Bind for Key: " .. key, "BindDialogFont", 15, 20, Color(0, 0, 0, 100), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Set Bind for Key: " .. key, "BindDialogFont", 14, 19, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    end
     
-    draw.RoundedBox(8, 0, 0, w, h, KEYBIND.Colors.background)
-    
-    render.SetScissorRect(0, 0, w, h, true)
-    local gradient = Material("gui/gradient_up")
-    SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
-    render.SetScissorRect(0, 0, w, h, false)
-    
-    draw.RoundedBoxEx(8, 0, 0, w, 30, KEYBIND.Colors.sectionHeader, true, true, false, false)
-    
-    draw.RoundedBox(8, 0, 0, w, h, KEYBIND.Colors.border)
-    draw.RoundedBox(8, 1, 1, w-2, h-2, KEYBIND.Colors.background)
-    
-    draw.SimpleText("Set Bind for key: " .. key, "BindDialogFont", 10, 15, 
-        KEYBIND.Colors.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-end
-
-    
+    -- Modern close button
     local closeBtn = vgui.Create("DButton", dialog)
     closeBtn:SetSize(30, 30)
-    closeBtn:SetPos(dialog:GetWide() - 35, 0)
+    closeBtn:SetPos(dialog:GetWide() - 40, 5)
     closeBtn:SetText("")
     closeBtn.Paint = function(self, w, h)
-        local color = self:IsHovered() and Color(255, 80, 80) or Color(200, 60, 60)
-        draw.SimpleText("✕", "BindDialogFont", w/2, h/2, color, 
-            TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(255, 80, 80, 200) or Color(255, 255, 255, 30)
+        
+        draw.RoundedBox(8, 0, 0, w, h, color)
+        
+        -- X icon
+        local padding = 10
+        local color = hovered and Color(255, 255, 255) or Color(220, 220, 220)
+        
+        surface.SetDrawColor(color)
+        surface.DrawLine(padding, padding, w-padding, h-padding)
+        surface.DrawLine(w-padding, padding, padding, h-padding)
     end
     closeBtn.DoClick = function() dialog:Remove() end
     
+    -- Modern text entry
     local textEntry = vgui.Create("DTextEntry", dialog)
-    textEntry:SetPos(10, 40)
-    textEntry:SetSize(dialog:GetWide() - 20, 30)
+    textEntry:SetPos(15, 55)
+    textEntry:SetSize(dialog:GetWide() - 30, 36)
     textEntry:SetFont("BindDialogFont")
     textEntry:SetPlaceholderText("Enter command (e.g., say /advert raid!)")
     
     textEntry.Paint = function(self, w, h)
-        draw.RoundedBox(4, 0, 0, w, h, KEYBIND.Colors.keyDefault)
+        draw.RoundedBox(6, 0, 0, w, h, Color(35, 35, 40))
+        
+        -- Add focus highlight
+        if self:HasFocus() then
+            surface.SetDrawColor(60, 130, 200)
+            surface.DrawOutlinedRect(0, 0, w, h, 2)
+        end
+        
         self:DrawTextEntryText(
-            KEYBIND.Colors.text,
-            KEYBIND.Colors.accent,
-            KEYBIND.Colors.text
+            Color(230, 230, 230),
+            Color(60, 130, 200),
+            Color(230, 230, 230)
         )
         
         if self:GetText() == "" then
             draw.SimpleText(self:GetPlaceholderText(), "BindDialogFont", 5, h/2,
-                Color(KEYBIND.Colors.text.r, KEYBIND.Colors.text.g, KEYBIND.Colors.text.b, 100),
+                Color(150, 150, 150, 180),
                 TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
         end
     end
     
+    -- Command list with modern styling
     local cmdList = vgui.Create("DPanel", dialog)
-    cmdList:SetPos(10, 80)
-    cmdList:SetSize(dialog:GetWide() - 20, 50)
+    cmdList:SetPos(15, 100)
+    cmdList:SetSize(dialog:GetWide() - 30, 40)
+    cmdList:SetPaintBackground(false)
+    
     cmdList.Paint = function(self, w, h)
-        draw.SimpleText("Possible Commands:", "BindDialogFont", 0, 0, KEYBIND.Colors.text)
+        draw.SimpleText("Possible Commands:", "BindDialogFont", 0, 0, Color(230, 230, 230))
+        
         local y = 20
-        for _, cmd in ipairs(KEYBIND.Config.WhitelistedCommands) do
-            draw.SimpleText("• " .. cmd, "BindDialogFont", 10, y, 
-                Color(KEYBIND.Colors.text.r, KEYBIND.Colors.text.g, KEYBIND.Colors.text.b, 200))
-            y = y + 15
-        end
+        local commands = {"say", "me", "advert", "!unbox", "!goto", "!return", "!bring", "!tp"}
+        local commandText = table.concat(commands, "   •   ")
+        
+        draw.SimpleText(commandText, "BindDialogFont", 10, y, 
+            Color(150, 150, 150, 200), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     end
-
+    
+    -- Button container
     local buttonContainer = vgui.Create("DPanel", dialog)
-    buttonContainer:SetPos(10, dialog:GetTall() - 40)
-    buttonContainer:SetSize(dialog:GetWide() - 20, 30)
+    buttonContainer:SetPos(15, dialog:GetTall() - 50)
+    buttonContainer:SetSize(dialog:GetWide() - 30, 36)
     buttonContainer:SetPaintBackground(false)
     
+    -- Set bind button
     local btnSet = vgui.Create("DButton", buttonContainer)
-    btnSet:SetSize((buttonContainer:GetWide() - 10) * 0.7, 30)
+    btnSet:SetSize((buttonContainer:GetWide() - 10) * 0.7, 36)
     btnSet:Dock(LEFT)
     btnSet:SetText("")
     
     btnSet.Paint = function(self, w, h)
-        local baseColor = self:IsHovered() and KEYBIND.Colors.accent or KEYBIND.Colors.keyDefault
-        draw.RoundedBox(6, 0, 0, w, h, baseColor)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(70, 150, 220) or Color(60, 130, 200)
         
-        SafeDrawGradient(gradient, 0, 0, w, h, Color(255, 255, 255, 10))
+        draw.RoundedBox(6, 0, 0, w, h, color)
         
-        draw.SimpleText("Set Bind", "BindDialogFont", w/2, h/2,
-            KEYBIND.Colors.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        -- Add subtle gradient
+        surface.SetDrawColor(255, 255, 255, 15)
+        surface.SetMaterial(Material("gui/gradient_up"))
+        surface.DrawTexturedRect(0, 0, w, h)
+        
+        -- Text with shadow
+        draw.SimpleText("Set Bind", "BindDialogFont", w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Set Bind", "BindDialogFont", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     
+    -- Remove bind button
     local btnRemove = vgui.Create("DButton", buttonContainer)
-    btnRemove:SetSize((buttonContainer:GetWide() - 10) * 0.3, 30)
+    btnRemove:SetSize((buttonContainer:GetWide() - 10) * 0.3, 36)
     btnRemove:Dock(RIGHT)
     btnRemove:SetText("")
     
     btnRemove.Paint = function(self, w, h)
-        local baseColor = self:IsHovered() and Color(200, 60, 60) or Color(170, 50, 50)
-        draw.RoundedBox(6, 0, 0, w, h, baseColor)
+        local hovered = self:IsHovered()
+        local color = hovered and Color(220, 70, 70) or Color(200, 60, 60)
         
-        surface.SetDrawColor(255, 255, 255, 20)
+        draw.RoundedBox(6, 0, 0, w, h, color)
+        
+        -- Add subtle gradient
+        surface.SetDrawColor(255, 255, 255, 15)
         surface.SetMaterial(Material("gui/gradient_up"))
         surface.DrawTexturedRect(0, 0, w, h)
         
-        draw.SimpleText("Remove", "BindDialogFont", w/2, h/2,
-            KEYBIND.Colors.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        -- Text with shadow
+        draw.SimpleText("Remove", "BindDialogFont", w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText("Remove", "BindDialogFont", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     
-btnSet.DoClick = function()
-    local command = textEntry:GetValue()
-    if self:ValidateCommand(command, key) then
-        print("[KEYBIND] Setting bind: " .. key .. " -> " .. command)
-        
-        -- Make sure the profile exists
-        if not KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile] then
-            print("[KEYBIND] Error: Current profile doesn't exist")
-            return
+    btnSet.DoClick = function()
+        local command = textEntry:GetValue()
+        if self:ValidateCommand(command, key) then
+            KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = command
+            KEYBIND.Storage:SaveBinds()
+            
+            if KEYBIND.Settings.Config.showFeedback then
+                chat.AddText(Color(0, 255, 0), "[BindMenu] Bind set for key " .. key)
+            end
+            
+            dialog:Remove()
+            self:RefreshKeyboardLayout()
+        else
+            chat.AddText(Color(255, 0, 0), "[BindMenu] Use a valid command")
         end
-        
-        -- Make sure the binds table exists
-        if not KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds then
-            print("[KEYBIND] Creating binds table for profile")
-            KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds = {}
-        end
-        
-        -- Set the bind
-        KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = command
-        
-        -- Save the binds
-        KEYBIND.Storage:SaveBinds()
-        
-        -- Print the current binds for debugging
-        print("[KEYBIND] Current binds for profile " .. KEYBIND.Storage.CurrentProfile .. ":")
-        for k, v in pairs(KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds) do
-            print("  " .. k .. " -> " .. v)
-        end
-        
-        if KEYBIND.Settings.Config.showFeedback then
-            chat.AddText(Color(0, 255, 0), "[BindMenu] Bind set for key " .. key)
-        end
-        
-        dialog:Remove()
-        self:RefreshKeyboardLayout()
-    else
-        chat.AddText(Color(255, 0, 0), "[BindMenu] Use a valid command")
     end
-end
 
     btnRemove.DoClick = function()
         KEYBIND.Storage.Profiles[KEYBIND.Storage.CurrentProfile].binds[key] = nil
