@@ -10,6 +10,10 @@ local DEFAULT_PROFILES = {
     {name = "Premium4", displayName = "Loyalty 7"}
 }
 
+if CLIENT then
+    CreateClientConVar("KEYBIND_LastProfile", "Profile1", true, false, "Last selected keybind profile")
+end
+
 function KEYBIND.Storage:Initialize()
     file.CreateDir("bindmenu")
     
@@ -22,8 +26,9 @@ function KEYBIND.Storage:SaveBinds()
         profiles = {}
     }
 
+    -- Add error handling
     if not self.Profiles then
-        print("[KEYBIND] Error: No profiles to save")
+        print("[BindMenu] Error: No profiles to save")
         return
     end
 
@@ -35,24 +40,18 @@ function KEYBIND.Storage:SaveBinds()
         }
     end
 
-    local jsonData = util.TableToJSON(data, true)
-    file.Write("bindmenu/profiles.txt", jsonData)
-    
-    if not self.silentSave then
-        print("[KEYBIND] Saved profiles to disk")
-    end
-    self.silentSave = false 
-
     local success, jsonData = pcall(util.TableToJSON, data, true)
     if not success then
-        print("[KEYBIND] Error converting profiles to JSON")
+        print("[BindMenu] Error converting profiles to JSON")
         return
     end
     
-    local success = file.Write("bindmenu/profiles.txt", jsonData)
-    if not success then
-        print("[KEYBIND] Error writing profiles to disk")
+    file.Write("bindmenu/profiles.txt", jsonData)
+    
+    if not self.silentSave then
+        print("[BindMenu] Saved profiles to disk")
     end
+    self.silentSave = false
 end
 
 function KEYBIND.Settings:LoadSettings()
@@ -72,28 +71,26 @@ function KEYBIND.Storage:LoadBinds()
         local data = util.JSONToTable(jsonData)
         if data then
             self.Profiles = data.profiles
-            self.CurrentProfile = data.currentProfile
-            print("[KEYBIND] Loaded profiles from disk")
+            
+            -- Get the last profile from client convar
+            local lastProfile = GetConVar("KEYBIND_LastProfile"):GetString()
+            if lastProfile and self.Profiles[lastProfile] then
+                self.CurrentProfile = lastProfile
+            else
+                self.CurrentProfile = data.currentProfile
+            end
+            
+            print("[BindMenu] Loaded profiles from disk, using profile: " .. self.CurrentProfile)
         else
-            print("[KEYBIND] Error parsing saved profiles")
+            print("[BindMenu] Error parsing saved profiles")
             self:InitializeDefaultProfiles()
         end
     else
-        print("[KEYBIND] No saved profiles found, creating defaults")
+        print("[BindMenu] No saved profiles found, creating defaults")
         self:InitializeDefaultProfiles()
     end
 
     self:ValidateProfiles()
-end
-
-function KEYBIND.Settings:LoadSettings()
-    local data = file.Read("bindmenu/settings.txt", "DATA")
-    if data then
-        local settings = util.JSONToTable(data)
-        if settings then
-            self.Config = settings
-        end
-    end
 end
 
 function KEYBIND.Storage:InitializeDefaultProfiles()
@@ -151,6 +148,40 @@ function KEYBIND.Storage:RenameProfile(oldName, newName)
     end
 end
 
+function KEYBIND.Storage:DebugProfiles()
+    print("[BindMenu] Current profile: " .. tostring(self.CurrentProfile))
+    
+    if not self.Profiles then
+        print("[BindMenu] No profiles table found!")
+        return
+    end
+    
+    print("[BindMenu] Available profiles:")
+    for name, profile in pairs(self.Profiles) do
+        print("  - " .. name .. " (binds: " .. table.Count(profile.binds or {}) .. ")")
+        
+        if profile.binds then
+            for key, command in pairs(profile.binds) do
+                print("    * " .. key .. " -> " .. command)
+            end
+        end
+    end
+end
+
+net.Receive("KEYBIND_SaveClientProfile", function()
+    local profileName = net.ReadString()
+    if profileName and profileName ~= "" then
+        -- This is the proper way to set client-side info
+        LocalPlayer():ConCommand("KEYBIND_LastProfile " .. profileName)
+        
+        -- Also store it in our local settings
+        KEYBIND.Storage.CurrentProfile = profileName
+        KEYBIND.Storage:SaveBinds()
+        
+        print("[BindMenu] Client received profile save: " .. profileName)
+    end
+end)
+
 hook.Add("Initialize", "KEYBIND_Storage_Init", function()
     KEYBIND.Storage:Initialize()
 end)
@@ -161,8 +192,18 @@ hook.Add("InitPostEntity", "KEYBIND_LoadData", function()
     end)
 end)
 
+hook.Add("InitPostEntity2", "KEYBIND_DebugProfiles", function()
+    timer.Simple(3, function()
+        KEYBIND.Storage:DebugProfiles()
+    end)
+end)
+
 hook.Add("ShutDown", "KEYBIND_SaveData", function()
-    KEYBIND.Storage:SaveBinds()
+    if KEYBIND and KEYBIND.Storage and KEYBIND.Storage.SaveBinds then
+        pcall(function()
+            KEYBIND.Storage:SaveBinds()
+        end)
+    end
 end)
 
 hook.Add("Initialize", "KEYBIND_Settings_Init", function()
@@ -170,7 +211,11 @@ hook.Add("Initialize", "KEYBIND_Settings_Init", function()
 end)
 
 hook.Add("ShutDown", "KEYBIND_Settings_Save", function()
-    KEYBIND.Settings:SaveSettings()
+    if KEYBIND and KEYBIND.Settings and KEYBIND.Settings.SaveSettings then
+        pcall(function()
+            KEYBIND.Settings:SaveSettings()
+        end)
+    end
 end)
 
 timer.Create("KEYBIND_AutoSave", 300, 0, function() 
