@@ -1,0 +1,7 @@
+util.AddNetworkString("KEYBIND_SelectProfile") 
+net.Receive("KEYBIND_SelectProfile", function(len, ply)
+    local selectedProfile = net.ReadString()
+    net.Start("KEYBIND_SelectProfile")
+    net.WriteString(selectedProfile)
+    net.Send(ply)
+end)
