@@ -22,6 +22,11 @@ function KEYBIND.Storage:SaveBinds()
         profiles = {}
     }
 
+    if not self.Profiles then
+        print("[KEYBIND] Error: No profiles to save")
+        return
+    end
+
     for profileName, profileData in pairs(self.Profiles) do
         data.profiles[profileName] = {
             binds = profileData.binds or {},
@@ -37,6 +42,17 @@ function KEYBIND.Storage:SaveBinds()
         print("[KEYBIND] Saved profiles to disk")
     end
     self.silentSave = false 
+
+    local success, jsonData = pcall(util.TableToJSON, data, true)
+    if not success then
+        print("[KEYBIND] Error converting profiles to JSON")
+        return
+    end
+    
+    local success = file.Write("bindmenu/profiles.txt", jsonData)
+    if not success then
+        print("[KEYBIND] Error writing profiles to disk")
+    end
 end
 
 function KEYBIND.Settings:LoadSettings()
