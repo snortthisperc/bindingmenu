@@ -283,6 +283,13 @@ function KEYBIND.Menu:Create()
     self.Frame:ShowCloseButton(false)
     self.Frame:SetDraggable(false)
 
+        -- Make the frame size responsive
+    local screenW, screenH = ScrW(), ScrH()
+    local frameW = math.min(1485, screenW * 0.9)
+    local frameH = math.min(550, screenH * 0.8)
+    
+    self.Frame:SetSize(frameW, frameH)
+
     self.Frame.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, KEYBIND.Colors.background)
         
@@ -316,6 +323,7 @@ function KEYBIND.Menu:Create()
         draw.SimpleText("✕", "DermaLarge", w/2, h/2, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     closeBtn.DoClick = function()
+        hook.Remove("Think", "KEYBIND_KeyHandler")
         self.Frame:Remove()
     end
 
