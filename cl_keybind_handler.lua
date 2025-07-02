@@ -1,4 +1,10 @@
-local DEBUG_KEYBINDS = true  -- Set to true to enable debug logging
+local DEBUG_KEYBINDS = true
+
+local function DebugLog(...)
+    if DEBUG_KEYBINDS then
+        print("[KEYBIND DEBUG]", ...)
+    end
+end
 
 KEYBIND.Handler = KEYBIND.Handler or {}
 
