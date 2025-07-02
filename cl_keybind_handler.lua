@@ -50,7 +50,7 @@ KEYBIND.Handler.KeyCodeMap = {
 }
 
 function KEYBIND.Handler:Initialize()
-    hook.Add("Think", "KEYBIND_KeyHandler", function()
+    timer.Create("KEYBIND_KeyHandler", 0.05, 0, function()
         self:CheckKeys()
     end)
 end
@@ -120,8 +120,21 @@ function KEYBIND.Handler:ExecuteCommand(command)
         if table.HasValue(allowedCommands, cmdBase) then
             LocalPlayer():ConCommand("say " .. command)
         end
+        
+        local isAllowed = false
+        for _, allowedPrefix in ipairs(KEYBIND.Config.WhitelistedCommands) do
+            if string.StartWith(command, allowedPrefix) then
+                isAllowed = true
+                break
+            end
+        end
+        
+        if isAllowed then
+            LocalPlayer():ConCommand(command)
+        else
+            print("[KEYBIND] Command not allowed: " .. command)
+        end
     end
-end
 
 hook.Add("Initialize", "KEYBIND_Handler_Init", function()
     KEYBIND.Handler:Initialize()
