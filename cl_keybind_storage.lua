@@ -36,7 +36,8 @@ function KEYBIND.Storage:SaveBinds()
         data.profiles[profileName] = {
             binds = profileData.binds or {},
             name = profileData.name,
-            displayName = profileData.displayName
+            displayName = profileData.displayName,
+            icon = profileData.icon  -- Save the icon
         }
     end
 
