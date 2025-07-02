@@ -48,7 +48,13 @@ KEYBIND.Config = {
     WhitelistedCommands = {
         "say",
         "me",
-        "advert"
+        "advert",
+        "!unbox",
+        "!",
+        "!goto",
+        "!return",
+        "!bring",
+        "!tp"
     }
 }
 
@@ -67,18 +73,33 @@ end
 
 function KEYBIND:Initialize()
     -- Initialize all components in the correct order
-    self.Storage:Initialize()
-    self.Handler:Initialize()
-    self.Settings:Initialize()
+    if SERVER then
+        -- Server-side initialization
+        print("[BindMenu] Server-side initialization")
+    end
     
-    -- Wait for client to be fully ready before showing UI
     if CLIENT then
+        -- Client-side initialization
+        print("[BindMenu] Client-side initialization")
+        
+        -- Wait for client to be fully ready before showing UI
         timer.Simple(1, function()
-            self.Menu:Create()
+            if KEYBIND.Storage and KEYBIND.Storage.Initialize then
+                KEYBIND.Storage:Initialize()
+            end
+            
+            if KEYBIND.Handler and KEYBIND.Handler.Initialize then
+                KEYBIND.Handler:Initialize()
+            end
+            
+            if KEYBIND.Settings and KEYBIND.Settings.LoadSettings then
+                KEYBIND.Settings:LoadSettings()
+            end
         end)
     end
 end
 
+-- Replace the existing InitPostEntity hook with this
 hook.Add("InitPostEntity", "KEYBIND_Initialize", function()
     KEYBIND:Initialize()
 end)
