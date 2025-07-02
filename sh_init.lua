@@ -65,6 +65,24 @@ for _, profile in pairs(KEYBIND.Config.DefaultProfiles) do
     }
 end
 
+function KEYBIND:Initialize()
+    -- Initialize all components in the correct order
+    self.Storage:Initialize()
+    self.Handler:Initialize()
+    self.Settings:Initialize()
+    
+    -- Wait for client to be fully ready before showing UI
+    if CLIENT then
+        timer.Simple(1, function()
+            self.Menu:Create()
+        end)
+    end
+end
+
+hook.Add("InitPostEntity", "KEYBIND_Initialize", function()
+    KEYBIND:Initialize()
+end)
+
 -- Method skeletons (implement in respective files)
 function KEYBIND.Menu:Create()
     -- Create the menu frame
@@ -111,6 +129,28 @@ function KEYBIND.Menu:RenderCompleteKeyboard(parent)
         keyButton:Dock(LEFT)
         keyButton:SetWide(50)
         keyButton:SetTall(50)
+    end
+end
+
+function KEYBIND:GetUserAccessLevel(ply)
+    local userGroup = ply:GetUserGroup()
+    if userGroup == "loyalty" then
+        return 2 -- Highest access
+    elseif userGroup == "premium" then
+        return 1 -- Medium access
+    else
+        return 0 -- Basic access
+    end
+end
+
+function KEYBIND:GetMaxProfilesForUser(ply)
+    local accessLevel = self:GetUserAccessLevel(ply)
+    if accessLevel == 2 then
+        return 7
+    elseif accessLevel == 1 then
+        return 5
+    else
+        return 3
     end
 end
 
