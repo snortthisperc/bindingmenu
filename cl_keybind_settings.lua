@@ -10,20 +10,34 @@ KEYBIND.Settings.Config = {
     -- Add any other settings here
 }
 
-local function SafeDrawGradient(material, x, y, w, h, color)
-    if not material or material:IsError() then return end
-    
-    surface.SetDrawColor(color or Color(255, 255, 255, 10))
-    surface.SetMaterial(material)
-    surface.DrawTexturedRect(x, y, w, h)
-end
-
 local GRADIENT = Material("gui/gradient_up")
 local GRADIENT_DOWN = Material("gui/gradient_down")
 
-surface.CreateFont("KeybindSettingsFont", {
+-- Create fonts for the settings menu
+surface.CreateFont("KeybindSettingsTitle", {
     font = "Roboto",
-    size = 17,  
+    size = 20,
+    weight = 600,
+    antialias = true
+})
+
+surface.CreateFont("KeybindSettingsCurrentTitle", {
+    font = "Roboto",
+    size = 16,
+    weight = 600,
+    antialias = true
+})
+
+surface.CreateFont("KeybindSettingsText", {
+    font = "Roboto",
+    size = 16,
+    weight = 500,
+    antialias = true
+})
+
+surface.CreateFont("KeybindSettingsButton", {
+    font = "Roboto",
+    size = 15,
     weight = 500,
     antialias = true
 })
@@ -37,7 +51,7 @@ function KEYBIND.Settings:SaveSettings()
     
     file.CreateDir("bindmenu")
     file.Write("bindmenu/settings.txt", util.TableToJSON(data, true))
-    print("[BindMenu] Saved settings to disk")
+    print("[KEYBIND] Saved settings to disk")
 end
 
 function KEYBIND.Settings:LoadSettings()
@@ -48,6 +62,15 @@ function KEYBIND.Settings:LoadSettings()
             self.Config = settings
         end
     end
+end
+
+-- Safe gradient drawing function
+function KEYBIND.Settings:SafeDrawGradient(material, x, y, w, h, color)
+    if not material or material:IsError() then return end
+    
+    surface.SetDrawColor(color or Color(255, 255, 255, 10))
+    surface.SetMaterial(material)
+    surface.DrawTexturedRect(x, y, w, h)
 end
 
 -- Initialize settings
@@ -67,183 +90,349 @@ function KEYBIND.Settings:Create()
         self.Frame:Remove()
     end
 
-    -- Create fonts for the settings menu
-    surface.CreateFont("KeybindSettingsTitle", {
-        font = "Roboto",
-        size = 20,
-        weight = 600,
-        antialias = true
-    })
-    
-    surface.CreateFont("KeybindSettingsText", {
-        font = "Roboto",
-        size = 16,
-        weight = 500,
-        antialias = true
-    })
-    
-    surface.CreateFont("KeybindSettingsButton", {
-        font = "Roboto",
-        size = 15,
-        weight = 500,
-        antialias = true
-    })
-
     -- Create the main frame
     self.Frame = vgui.Create("DFrame")
-    self.Frame:SetSize(450, 500)
+    self.Frame:SetSize(500, 550)
     self.Frame:Center()
     self.Frame:SetTitle("")
     self.Frame:MakePopup()
     self.Frame:ShowCloseButton(false)
     self.Frame:SetDraggable(true)
     
-    -- Add blur effect
+    -- Modern dark theme
     self.Frame.Paint = function(self, w, h)
         Derma_DrawBackgroundBlur(self, 0)
-        
-        -- Main background
-        draw.RoundedBox(8, 0, 0, w, h, Color(30, 30, 35, 245))
-        
-        -- Header
-        draw.RoundedBoxEx(8, 0, 0, w, 40, Color(40, 40, 45, 255), true, true, false, false)
-        
-        -- Title
-        draw.SimpleText("Settings", "KeybindSettingsTitle", 20, 20, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-        
-        -- Bottom bar
-        draw.RoundedBoxEx(8, 0, h-50, w, 50, Color(35, 35, 40, 255), false, false, true, true)
+        draw.RoundedBox(10, 0, 0, w, h, Color(20, 20, 25, 240))
+        draw.RoundedBoxEx(10, 0, 0, w, 50, Color(40, 90, 140), true, true, false, false)
+        draw.SimpleText("Bind Menu Settings", "KeybindSettingsTitle", 24, 24, Color(255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
     end
     
     -- Close button
     local closeBtn = vgui.Create("DButton", self.Frame)
-    closeBtn:SetSize(30, 30)
-    closeBtn:SetPos(self.Frame:GetWide() - 40, 5)
-    closeBtn:SetText("")
+    closeBtn:SetSize(36, 36)
+    closeBtn:SetPos(self.Frame:GetWide() - 46, 7)
+    closeBtn:SetText("X")
+    closeBtn:SetFont("KeybindSettingsTitle")
+    closeBtn:SetTextColor(Color(255, 255, 255))
     closeBtn.Paint = function(self, w, h)
-        local color = self:IsHovered() and Color(255, 80, 80) or Color(200, 60, 60)
-        draw.SimpleText("✕", "KeybindSettingsTitle", w/2, h/2, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.RoundedBox(8, 0, 0, w, h, self:IsHovered() and Color(255, 80, 80, 200) or Color(255, 255, 255, 30))
     end
     closeBtn.DoClick = function() self.Frame:Remove() end
     
-    -- Create scroll panel for settings
+    -- Create scroll panel
     local scroll = vgui.Create("DScrollPanel", self.Frame)
     scroll:Dock(FILL)
-    scroll:DockMargin(10, 50, 10, 60)
-    
-    -- Custom scrollbar
-    local scrollbar = scroll:GetVBar()
-    scrollbar:SetWide(6)
-    scrollbar.Paint = function(self, w, h) end
-    scrollbar.btnUp.Paint = function(self, w, h) end
-    scrollbar.btnDown.Paint = function(self, w, h) end
-    scrollbar.btnGrip.Paint = function(self, w, h)
-        draw.RoundedBox(3, 0, 0, w, h, Color(80, 80, 85, 180))
-    end
+    scroll:DockMargin(15, 60, 15, 60)
     
     -- Add general settings section
-    self:AddGeneralSettingsSection(scroll)
+    self:AddSimpleGeneralSettings(scroll)
     
-    -- Add profile settings sections based on user rank
-    self:AddProfileSettingsSections(scroll)
+    -- Add profile sections
+    self:AddSimpleProfileSettings(scroll)
     
-    -- Add reset all button at the bottom
+    -- Add reset all button
     local resetAllBtn = vgui.Create("DButton", self.Frame)
-    resetAllBtn:SetSize(200, 36)
-    resetAllBtn:SetPos(self.Frame:GetWide()/2 - 100, self.Frame:GetTall() - 43)
-    resetAllBtn:SetText("")
+    resetAllBtn:SetSize(200, 40)
+    resetAllBtn:SetPos(self.Frame:GetWide()/2 - 100, self.Frame:GetTall() - 50)
+    resetAllBtn:SetText("Reset All Profiles")
+    resetAllBtn:SetFont("KeybindSettingsButton")
+    resetAllBtn:SetTextColor(Color(255, 255, 255))
     
     resetAllBtn.Paint = function(self, w, h)
-        local baseColor = self:IsHovered() and Color(180, 50, 50) or Color(150, 40, 40)
-        draw.RoundedBox(6, 0, 0, w, h, baseColor)
-        
-        -- Add gradient
-        surface.SetDrawColor(255, 255, 255, 15)
-        surface.SetMaterial(Material("gui/gradient_up"))
-        surface.DrawTexturedRect(0, 0, w, h)
-        
-        draw.SimpleText("Reset All Profiles", "KeybindSettingsButton", w/2, h/2, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.RoundedBox(8, 0, 0, w, h, self:IsHovered() and Color(200, 60, 60) or Color(170, 50, 50))
     end
     
     resetAllBtn.DoClick = function()
         Derma_Query(
             "Are you sure you want to reset ALL profiles?\nThis cannot be undone!",
             "Confirm Reset",
-            "Yes",
-            function()
-                self:DeleteAllProfiles()
-            end,
-            "No",
-            function() end
+            "Yes", function() self:DeleteAllProfiles() end,
+            "No", function() end
         )
     end
 end
 
-function KEYBIND.Settings:CreateStyledButton(parent, text)
+
+function KEYBIND.Settings:AddSimpleGeneralSettings(parent)
+    -- General settings panel
+    local panel = vgui.Create("DPanel", parent)
+    panel:Dock(TOP)
+    panel:SetHeight(80)
+    panel:DockMargin(0, 0, 0, 10)
+    
+    panel.Paint = function(self, w, h)
+        draw.RoundedBox(8, 0, 0, w, h, Color(35, 35, 40))
+        draw.RoundedBoxEx(8, 0, 0, w, 30, Color(45, 45, 50), true, true, false, false)
+        draw.SimpleText("General Settings", "KeybindSettingsText", 10, 15, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    end
+    
+    -- Feedback checkbox
+    local feedbackCheck = vgui.Create("DCheckBoxLabel", panel)
+    feedbackCheck:SetPos(15, 45)
+    feedbackCheck:SetText("Show Feedback Messages")
+    feedbackCheck:SetTextColor(Color(210, 210, 210))
+    feedbackCheck:SetFont("KeybindSettingsText")
+    feedbackCheck:SizeToContents()
+    feedbackCheck:SetValue(self.Config.showFeedback)
+    
+    feedbackCheck.OnChange = function(self, val)
+        KEYBIND.Settings.Config.showFeedback = val
+        KEYBIND.Settings:SaveSettings()
+        
+        if val then
+            chat.AddText(Color(0, 255, 0), "[BindMenu] Feedback messages enabled")
+        else
+            chat.AddText(Color(255, 0, 0), "[BindMenu] Feedback messages disabled")
+        end
+    end
+end
+
+function KEYBIND.Settings:AddSimpleProfileSettings(parent)
+    local userGroup = LocalPlayer():GetUserGroup()
+    local accessLevel = 0
+    
+    if userGroup == "loyalty" then
+        accessLevel = 2
+    elseif userGroup == "premium" then
+        accessLevel = 1
+    end
+    
+    local maxProfiles = 3
+    if accessLevel == 2 then
+        maxProfiles = 7
+    elseif accessLevel == 1 then
+        maxProfiles = 5
+    end
+    
+    -- Define base profiles with proper access levels
+    local baseProfiles = {
+        {name = "Profile1", displayName = "Profile 1", access = 0, color = Color(60, 130, 200)},
+        {name = "Profile2", displayName = "Profile 2", access = 0, color = Color(60, 130, 200)},
+        {name = "Profile3", displayName = "Profile 3", access = 0, color = Color(60, 130, 200)},
+        {name = "Premium1", displayName = "Premium 4", access = 1, color = Color(200, 130, 60)},
+        {name = "Premium2", displayName = "Premium 5", access = 1, color = Color(200, 130, 60)},
+        {name = "Premium3", displayName = "Loyalty 6", access = 2, color = Color(130, 200, 60)},
+        {name = "Premium4", displayName = "Loyalty 7", access = 2, color = Color(130, 200, 60)}
+    }
+    
+    -- Add sections for profiles the user has access to
+    for i, profileData in ipairs(baseProfiles) do
+        if profileData.access <= accessLevel and i <= maxProfiles then
+            self:AddSimpleProfileCard(parent, profileData.name, profileData.color)
+        end
+    end
+end
+
+function KEYBIND.Settings:AddSimpleProfileCard(parent, profileName, accentColor)
+    local storedProfile = KEYBIND.Storage.Profiles[profileName]
+    if not storedProfile then return end
+    
+    local displayName = storedProfile.displayName or profileName
+    local isCurrentProfile = KEYBIND.Storage.CurrentProfile == profileName
+    
+    -- Create a container for the entire card including profile picture selector
+    local container = vgui.Create("DPanel", parent)
+    container:Dock(TOP)
+    container:SetPaintBackground(false)
+    container:DockMargin(0, 0, 0, 20)
+    
+    -- Create the main profile panel
+    local panel = vgui.Create("DPanel", container)
+    panel:Dock(TOP)
+    panel:SetHeight(100)
+    panel:DockMargin(0, 0, 0, 0)
+    
+    panel.Paint = function(self, w, h)
+        draw.RoundedBox(8, 0, 0, w, h, Color(35, 35, 40))
+        draw.RoundedBoxEx(8, 0, 0, w, 30, isCurrentProfile and accentColor or Color(45, 45, 50), true, true, false, false)
+        
+        -- Draw profile name
+        draw.SimpleText(displayName, "KeybindSettingsText", 10, 15, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        
+        -- Draw current indicator if active
+        if isCurrentProfile then
+            draw.SimpleText("ACTIVE", "KeybindSettingsText", w - 10, 15, Color(230, 230, 230), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        end
+        
+        -- Draw profile icon
+        local iconName = storedProfile.icon or "Profile1"
+        local iconMat = KEYBIND.Menu.ProfileIcons[iconName]
+        
+        if iconMat then
+            -- Draw icon in the header
+            surface.SetDrawColor(255, 255, 255, 255)
+            surface.SetMaterial(iconMat)
+            surface.DrawTexturedRect(w - 50, 5, 20, 20)
+        end
+    end
+    
+    -- Create buttons with standard Derma components
+    local renameBtn = vgui.Create("DButton", panel)
+    renameBtn:SetSize(panel:GetWide() / 2 - 20, 36)
+    renameBtn:SetPos(10, 45)
+    renameBtn:SetText("Rename Profile")
+    renameBtn:SetFont("KeybindSettingsButton")
+    renameBtn:SetTextColor(Color(255, 255, 255))
+    
+    renameBtn.Paint = function(self, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, self:IsHovered() and Color(70, 150, 220) or Color(60, 130, 200))
+    end
+    
+    renameBtn.DoClick = function()
+        self:OpenSimpleRenameDialog(profileName, displayName)
+    end
+    
+    local resetBtn = vgui.Create("DButton", panel)
+    resetBtn:SetSize(panel:GetWide() / 2 - 20, 36)
+    resetBtn:SetPos(panel:GetWide() / 2 + 10, 45)
+    resetBtn:SetText("Reset Binds")
+    resetBtn:SetFont("KeybindSettingsButton")
+    resetBtn:SetTextColor(Color(255, 255, 255))
+    
+    resetBtn.Paint = function(self, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, self:IsHovered() and Color(220, 70, 70) or Color(200, 60, 60))
+    end
+    
+    resetBtn.DoClick = function()
+        Derma_Query(
+            "Are you sure you want to reset all binds for " .. displayName .. "?",
+            "Confirm Reset",
+            "Yes", function() self:ResetProfile(profileName) end,
+            "No", function() end
+        )
+    end
+    
+    -- Fix button positions after parent is fully created
+    panel.PerformLayout = function(self, w, h)
+        renameBtn:SetSize(w / 2 - 20, 36)
+        renameBtn:SetPos(10, 45)
+        
+        resetBtn:SetSize(w / 2 - 20, 36)
+        resetBtn:SetPos(w / 2 + 10, 45)
+    end
+    
+    -- Create collapsible profile picture selector
+    local pictureSelector = vgui.Create("DCollapsibleCategory", container)
+    pictureSelector:Dock(TOP)
+    pictureSelector:SetLabel("Profile Picture")
+    pictureSelector:SetExpanded(false)
+    pictureSelector:DockMargin(0, 10, 0, 0)
+    
+    -- Style the collapsible category
+    pictureSelector.Header:SetTall(30)
+    pictureSelector.Header.Paint = function(self, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, Color(45, 45, 50))
+        
+        -- Draw arrow
+        local arrowSize = 8
+        local arrowX = 15
+        local arrowY = h/2
+        
+        surface.SetDrawColor(230, 230, 230, 200)
+        if pictureSelector:GetExpanded() then
+            surface.DrawLine(arrowX - arrowSize/2, arrowY + arrowSize/2, arrowX + arrowSize/2, arrowY - arrowSize/2)
+            surface.DrawLine(arrowX + arrowSize/2, arrowY - arrowSize/2, arrowX + arrowSize*1.5, arrowY + arrowSize/2)
+        else
+            surface.DrawLine(arrowX - arrowSize/2, arrowY - arrowSize/2, arrowX + arrowSize/2, arrowY + arrowSize/2)
+            surface.DrawLine(arrowX + arrowSize/2, arrowY + arrowSize/2, arrowX + arrowSize*1.5, arrowY - arrowSize/2)
+        end
+    end
+    
+    -- Create the icon selector inside the collapsible category
+    local iconContainer = vgui.Create("DPanel", pictureSelector)
+    iconContainer:SetPaintBackground(false)
+    iconContainer:SetHeight(240)
+    
+    -- Add the profile picture selector to the container
+    self:CreateProfilePictureSelector(iconContainer, profileName)
+    
+    -- Set the contents of the collapsible category
+    pictureSelector:SetContents(iconContainer)
+    
+    return container
+end
+
+function KEYBIND.Settings:CreateStyledButton(parent, text, baseColor)
     local btn = vgui.Create("DButton", parent)
     btn:SetText("")
     btn:SetHeight(36)
     
+    baseColor = baseColor or Color(60, 60, 65)
+    
     btn.Paint = function(self, w, h)
-        local baseColor = self.CustomColor or Color(60, 60, 65)
-        local hoverColor = self:IsHovered() and Color(
+        local hovered = self:IsHovered()
+        local color = hovered and Color(
             math.min(baseColor.r + 20, 255),
             math.min(baseColor.g + 20, 255),
             math.min(baseColor.b + 20, 255)
         ) or baseColor
         
-        draw.RoundedBox(6, 0, 0, w, h, hoverColor)
+        -- Button background with rounded corners
+        draw.RoundedBox(6, 0, 0, w, h, color)
         
-        -- Add gradient
+        -- Add subtle gradient
         surface.SetDrawColor(255, 255, 255, 15)
-        surface.SetMaterial(Material("gui/gradient_up"))
+        surface.SetMaterial(GRADIENT)
         surface.DrawTexturedRect(0, 0, w, h)
         
-        draw.SimpleText(text, "KeybindSettingsButton", w/2, h/2, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        -- Text with shadow for depth
+        draw.SimpleText(text, "KeybindSettingsButton", w/2+1, h/2+1, Color(0, 0, 0, 100), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        draw.SimpleText(text, "KeybindSettingsButton", w/2, h/2, Color(255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     
     return btn
 end
 
--- Custom dialog style
-function KEYBIND.Settings:CreateStyledDialog(title, text, w, h)
-    local frame = vgui.Create("DFrame")
-    frame:SetSize(w or 400, h or 150)
-    frame:Center()
-    frame:SetTitle("")
-    frame:MakePopup()
-    frame:ShowCloseButton(false)
+function KEYBIND.Settings:OpenSimpleRenameDialog(profileName, currentName)
+    local dialog = vgui.Create("DFrame")
+    dialog:SetSize(300, 130)
+    dialog:Center()
+    dialog:SetTitle("Rename Profile")
+    dialog:MakePopup()
     
-    frame.Paint = function(self, w, h)
-        Derma_DrawBackgroundBlur(self, 0)
-        draw.RoundedBox(8, 0, 0, w, h, KEYBIND.Colors.background)
-        draw.RoundedBoxEx(8, 0, 0, w, 30, KEYBIND.Colors.sectionHeader, true, true, false, false)
-        draw.SimpleText(title, "DermaDefaultBold", 10, 15, KEYBIND.Colors.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    end
+    local textEntry = vgui.Create("DTextEntry", dialog)
+    textEntry:SetPos(10, 30)
+    textEntry:SetSize(280, 30)
+    textEntry:SetValue(currentName)
+    textEntry:SelectAllText()
     
-    return frame
-end
-
-function KEYBIND.Settings:ResetProfile(profile)
-    if KEYBIND.Storage.Profiles[profile] then
-        KEYBIND.Storage.Profiles[profile].binds = {}
-        KEYBIND.Storage:SaveBinds()
-        
-        if KEYBIND.Settings.Config.showFeedback then
-            chat.AddText(Color(0, 255, 0), "[BindMenu] Reset all binds for profile: " .. profile)
-        end
-        
-        -- Refresh menus
-        if IsValid(KEYBIND.Menu.Frame) then
-            KEYBIND.Menu:RefreshKeyboardLayout()
+    local saveBtn = vgui.Create("DButton", dialog)
+    saveBtn:SetPos(10, 70)
+    saveBtn:SetSize(280, 30)
+    saveBtn:SetText("Save")
+    
+    saveBtn.DoClick = function()
+        local newName = textEntry:GetValue()
+        if newName ~= "" then
+            KEYBIND.Storage:RenameProfile(profileName, newName)
+            dialog:Remove()
+            
+            timer.Simple(0.1, function()
+                if IsValid(self.Frame) then
+                    self:Create()
+                end
+            end)
         end
     end
 end
 
 function KEYBIND.Settings:DeleteAllProfiles()
     -- Initialize with default profiles based on rank
-    local accessLevel = KEYBIND:GetUserAccessLevel(LocalPlayer())
-    local maxProfiles = KEYBIND:GetMaxProfilesForUser(LocalPlayer())
+    local userGroup = LocalPlayer():GetUserGroup()
+    local accessLevel = 0
+    
+    if userGroup == "loyalty" then
+        accessLevel = 2
+    elseif userGroup == "premium" then
+        accessLevel = 1
+    end
+    
+    local maxProfiles = 3
+    if accessLevel == 2 then
+        maxProfiles = 7
+    elseif accessLevel == 1 then
+        maxProfiles = 5
+    end
     
     KEYBIND.Storage.Profiles = {}
     
@@ -305,242 +494,5 @@ function KEYBIND.Settings:ResetProfile(profile)
                 self:Create()
             end
         end)
-    end
-end
-
-function KEYBIND.Settings:AddGeneralSettingsSection(parent)
-    local section = vgui.Create("DPanel", parent)
-    section:Dock(TOP)
-    section:SetHeight(80)
-    section:DockMargin(0, 0, 0, 10)
-    section:SetPaintBackground(false)
-    
-    -- Section header
-    local header = vgui.Create("DPanel", section)
-    header:Dock(TOP)
-    header:SetHeight(30)
-    header:SetPaintBackground(false)
-    
-    header.Paint = function(self, w, h)
-        draw.RoundedBoxEx(6, 0, 0, w, h, Color(50, 50, 55), true, true, false, false)
-        draw.SimpleText("General Settings", "KeybindSettingsText", 10, h/2, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    end
-    
-    -- Section content
-    local content = vgui.Create("DPanel", section)
-    content:Dock(FILL)
-    content:DockMargin(0, 0, 0, 0)
-    
-    content.Paint = function(self, w, h)
-        draw.RoundedBoxEx(6, 0, 0, w, h, Color(40, 40, 45), false, false, true, true)
-    end
-    
-    -- Feedback checkbox
-    local feedbackCheck = vgui.Create("DCheckBoxLabel", content)
-    feedbackCheck:SetPos(15, 15)
-    feedbackCheck:SetText("Show Feedback Messages")
-    feedbackCheck:SetTextColor(Color(210, 210, 210))
-    feedbackCheck:SetFont("KeybindSettingsText")
-    feedbackCheck:SizeToContents()
-    feedbackCheck:SetValue(self.Config.showFeedback)
-    
-    feedbackCheck.OnChange = function(self, val)
-        KEYBIND.Settings.Config.showFeedback = val
-        KEYBIND.Settings:SaveSettings()
-        
-        if val then
-            chat.AddText(Color(0, 255, 0), "[BindMenu] Feedback messages enabled")
-        else
-            chat.AddText(Color(255, 0, 0), "[BindMenu] Feedback messages disabled")
-        end
-    end
-    
-    -- Custom checkbox style
-    feedbackCheck.Button.Paint = function(self, w, h)
-        local checkColor = self:GetChecked() and Color(80, 150, 220) or Color(60, 60, 65)
-        draw.RoundedBox(3, 0, 0, w, h, checkColor)
-        
-        if self:GetChecked() then
-            draw.SimpleText("✓", "KeybindSettingsText", w/2, h/2, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        end
-    end
-    
-    return section
-end
-
-function KEYBIND.Settings:AddProfileSettingsSections(parent)
-    local userGroup = LocalPlayer():GetUserGroup()
-    local accessLevel = KEYBIND:GetUserAccessLevel(LocalPlayer())
-    local maxProfiles = KEYBIND:GetMaxProfilesForUser(LocalPlayer())
-    
-    -- Define base profiles with proper access levels
-    local baseProfiles = {
-        {name = "Profile1", displayName = "Profile 1", access = 0}, -- User
-        {name = "Profile2", displayName = "Profile 2", access = 0},
-        {name = "Profile3", displayName = "Profile 3", access = 0},
-        {name = "Premium1", displayName = "Premium 4", access = 1}, -- Premium
-        {name = "Premium2", displayName = "Premium 5", access = 1},
-        {name = "Premium3", displayName = "Loyalty 6", access = 2}, -- Loyalty
-        {name = "Premium4", displayName = "Loyalty 7", access = 2}
-    }
-    
-    -- Add sections for profiles the user has access to
-    for i, profileData in ipairs(baseProfiles) do
-        -- Check if user has access to this profile
-        local hasAccess = false
-        
-        if profileData.access <= accessLevel and i <= maxProfiles then
-            hasAccess = true
-        end
-        
-        if hasAccess then
-            self:AddProfileSection(parent, profileData.name)
-        end
-    end
-end
-
-function KEYBIND.Settings:AddProfileSection(parent, profileName)
-    local storedProfile = KEYBIND.Storage.Profiles[profileName]
-    if not storedProfile then return end
-    
-    local displayName = storedProfile.displayName or profileName
-    
-    local section = vgui.Create("DPanel", parent)
-    section:Dock(TOP)
-    section:SetHeight(90)
-    section:DockMargin(0, 0, 0, 10)
-    section:SetPaintBackground(false)
-    
-    -- Section header
-    local header = vgui.Create("DPanel", section)
-    header:Dock(TOP)
-    header:SetHeight(30)
-    header:SetPaintBackground(false)
-    
-    header.Paint = function(self, w, h)
-        local isCurrentProfile = KEYBIND.Storage.CurrentProfile == profileName
-        local headerColor = isCurrentProfile and Color(60, 100, 150) or Color(50, 50, 55)
-        
-        draw.RoundedBoxEx(6, 0, 0, w, h, headerColor, true, true, false, false)
-        draw.SimpleText(displayName, "KeybindSettingsText", 10, h/2, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-        
-        if isCurrentProfile then
-            draw.SimpleText("Current", "KeybindSettingsText", w - 10, h/2, Color(230, 230, 230), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-        end
-    end
-    
-    -- Section content
-    local content = vgui.Create("DPanel", section)
-    content:Dock(FILL)
-    content:DockMargin(0, 0, 0, 0)
-    
-    content.Paint = function(self, w, h)
-        draw.RoundedBoxEx(6, 0, 0, w, h, Color(40, 40, 45), false, false, true, true)
-    end
-    
-    -- Button container
-    local buttonPanel = vgui.Create("DPanel", content)
-    buttonPanel:Dock(FILL)
-    buttonPanel:DockMargin(10, 10, 10, 10)
-    buttonPanel:SetPaintBackground(false)
-    
-    -- Rename button
-    local renameBtn = self:CreateStyledButton(buttonPanel, "Rename Profile")
-    renameBtn:Dock(LEFT)
-    renameBtn:DockMargin(0, 0, 5, 0)
-    renameBtn:SetWide(parent:GetWide() / 2 - 25)
-    
-    renameBtn.DoClick = function()
-        self:OpenRenameDialog(profileName, displayName)
-    end
-    
-    -- Reset binds button
-    local resetBtn = self:CreateStyledButton(buttonPanel, "Reset Binds")
-    resetBtn:Dock(RIGHT)
-    resetBtn:DockMargin(5, 0, 0, 0)
-    resetBtn:SetWide(parent:GetWide() / 2 - 25)
-    resetBtn.CustomColor = Color(150, 40, 40)
-    
-    resetBtn.DoClick = function()
-        Derma_Query(
-            "Are you sure you want to reset all binds for " .. displayName .. "?",
-            "Confirm Reset",
-            "Yes",
-            function()
-                self:ResetProfile(profileName)
-            end,
-            "No",
-            function() end
-        )
-    end
-    
-    return section
-end
-
-function KEYBIND.Settings:OpenRenameDialog(profileName, currentName)
-    local dialog = vgui.Create("DFrame")
-    dialog:SetSize(300, 130)
-    dialog:Center()
-    dialog:SetTitle("")
-    dialog:MakePopup()
-    dialog:ShowCloseButton(false)
-    
-    dialog.Paint = function(self, w, h)
-        Derma_DrawBackgroundBlur(self, 0)
-        draw.RoundedBox(8, 0, 0, w, h, Color(30, 30, 35, 245))
-        draw.RoundedBoxEx(8, 0, 0, w, 30, Color(40, 40, 45), true, true, false, false)
-        draw.SimpleText("Rename Profile", "KeybindSettingsText", 10, 15, Color(230, 230, 230), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-    end
-    
-    local closeBtn = vgui.Create("DButton", dialog)
-    closeBtn:SetSize(30, 30)
-    closeBtn:SetPos(dialog:GetWide() - 35, 0)
-    closeBtn:SetText("")
-    closeBtn.Paint = function(self, w, h)
-        local color = self:IsHovered() and Color(255, 80, 80) or Color(200, 60, 60)
-        draw.SimpleText("✕", "KeybindSettingsTitle", w/2, h/2, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    closeBtn.DoClick = function() dialog:Remove() end
-    
-    local textEntry = vgui.Create("DTextEntry", dialog)
-    textEntry:SetPos(15, 45)
-    textEntry:SetSize(270, 30)
-    textEntry:SetValue(currentName)
-    textEntry:SelectAllText()
-    
-    textEntry.Paint = function(self, w, h)
-        draw.RoundedBox(4, 0, 0, w, h, Color(50, 50, 55))
-        self:DrawTextEntryText(Color(230, 230, 230), Color(80, 150, 220), Color(230, 230, 230))
-    end
-    
-    local saveBtn = vgui.Create("DButton", dialog)
-    saveBtn:SetPos(15, 85)
-    saveBtn:SetSize(270, 30)
-    saveBtn:SetText("")
-    
-    saveBtn.Paint = function(self, w, h)
-        local baseColor = self:IsHovered() and Color(80, 150, 220) or Color(60, 120, 190)
-        draw.RoundedBox(4, 0, 0, w, h, baseColor)
-        
-        surface.SetDrawColor(255, 255, 255, 15)
-        surface.SetMaterial(Material("gui/gradient_up"))
-        surface.DrawTexturedRect(0, 0, w, h)
-        
-        draw.SimpleText("Save", "KeybindSettingsButton", w/2, h/2, Color(230, 230, 230), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    end
-    
-    saveBtn.DoClick = function()
-        local newName = textEntry:GetValue()
-        if newName ~= "" then
-            KEYBIND.Storage:RenameProfile(profileName, newName)
-            dialog:Remove()
-            
-            -- Refresh the settings menu
-            timer.Simple(0.1, function()
-                if IsValid(self.Frame) then
-                    self:Create()
-                end
-            end)
-        end
     end
 end
